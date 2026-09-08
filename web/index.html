@@ -270,11 +270,15 @@
   .empty .h { font-size: 16px; font-weight: 700; color: var(--ink-2); margin-bottom: 6px; }
 
   .notice {
-    margin: 0 16px; padding: 10px 13px;
+    margin: 0 16px 10px; padding: 10px 13px;
     border: 1px solid var(--line); border-left: 3px solid var(--alert);
     border-radius: var(--r-sm); background: var(--alert-bg);
     font-size: 13px; color: var(--ink-2);
   }
+  .notice b { color: var(--ink); }
+  /* Staleness is a warning, not a failure — amber, and louder when it's bad. */
+  .notice.stale { border-left-color: #b8860b; background: var(--sunk); }
+  .notice.stale.bad { border-left-color: var(--alert); background: var(--alert-bg); }
 
   footer {
     padding: 2px 16px; font-family: var(--mono);
@@ -510,6 +514,23 @@
 
     var f = d.failures || [];
     $('#notice').innerHTML = '';
+
+    // Stale data is more dangerous than a failed course: the app looks fine
+    // and quietly shows yesterday's tee times.
+    var missed = missedPolls(d.updatedAt);
+    if (missed >= 3) {
+      var bad = missed >= 12;                       // ~3 hours of missed polls
+      var n = el('div', 'notice stale' + (bad ? ' bad' : ''));
+      if (!d.updatedAt) {
+        n.innerHTML = '<b>No tee time data yet.</b> The poller has not completed a run.';
+      } else {
+        n.innerHTML = '<b>These tee times may be out of date.</b> Last updated ' +
+          ago(new Date(d.updatedAt)) + ' — about ' + missed + ' scheduled updates have been missed. ' +
+          'Check the poller in GitHub Actions.';
+      }
+      $('#notice').appendChild(n);
+    }
+
     if (f.length) {
       $('#notice').appendChild(el('div', 'notice',
         f.length + ' course' + (f.length > 1 ? 's' : '') + " didn't respond this run: " +
@@ -639,6 +660,36 @@
       out.appendChild(card);
     });
   }
+
+  /* How many scheduled polls have been missed since `sinceIso`.
+     The workflow runs at :07 :22 :37 :52 during UTC hours 9-23 and 0-3, so it
+     is legitimately quiet from 04:00-08:59 UTC (midnight-5am Eastern). Counting
+     actual firing opportunities means the overnight gap never looks like a
+     fault, but a stopped poller shows up within the hour. */
+  function missedPolls(sinceIso, now) {
+    if (!sinceIso) return Infinity;
+    var MIN = [7, 22, 37, 52];
+    var since = new Date(sinceIso);
+    if (isNaN(since)) return Infinity;
+    now = now ? new Date(now) : new Date();
+
+    var cur = new Date(Date.UTC(since.getUTCFullYear(), since.getUTCMonth(),
+                                since.getUTCDate(), since.getUTCHours()));
+    var n = 0, guard = 0;
+    while (cur <= now && guard++ < 2000) {
+      var h = cur.getUTCHours();
+      if ((h >= 9 && h <= 23) || (h >= 0 && h <= 3)) {
+        for (var i = 0; i < MIN.length; i++) {
+          var t = new Date(cur);
+          t.setUTCMinutes(MIN[i], 0, 0);
+          if (t > since && t <= now) n++;
+        }
+      }
+      cur.setUTCHours(cur.getUTCHours() + 1);
+    }
+    return n;
+  }
+  window.__missedPolls = missedPolls;   // exposed so it can be tested directly
 
   function ago(d) {
     var m = Math.round((Date.now() - d.getTime()) / 60000);

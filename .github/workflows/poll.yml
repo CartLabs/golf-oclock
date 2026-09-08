@@ -3,7 +3,8 @@ name: Poll tee times
 on:
   schedule:
     # Every 15 minutes, 5am–10pm Eastern (09:00–03:00 UTC). Cron here is UTC.
-        - cron: '7,22,37,52 9-23,0-3 * * *'
+    # Off the quarter-hour on purpose — that is when GitHub's queue is busiest.
+    - cron: '7,22,37,52 9-23,0-3 * * *'
   workflow_dispatch:        # lets you run it by hand from the Actions tab
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - 'web/**'
       - '.github/workflows/poll.yml'
 
+# Shared with hot.yml so the two can never write seen.json at the same time.
 concurrency:
   group: golf-poll
   cancel-in-progress: false
@@ -46,7 +48,7 @@ jobs:
           DAYS_AHEAD: '8'
         run: node src/index.js
 
-  - name: Commit the results
+      - name: Commit the results
         run: |
           git config user.name  "golf-oclock-bot"
           git config user.email "actions@users.noreply.github.com"

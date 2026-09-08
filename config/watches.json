@@ -15,9 +15,14 @@
   "watches": [
     {
       "label": "Weekend morning foursome",
-      "enabled": true,
-      "courses": ["any"],
-      "daysOfWeek": [0, 6],
+      "enabled": false,
+      "courses": [
+        "any"
+      ],
+      "daysOfWeek": [
+        0,
+        6
+      ],
       "timeFrom": "06:00",
       "timeTo": "10:30",
       "holes": 18,
@@ -26,13 +31,37 @@
     {
       "label": "Weekday twilight 9",
       "enabled": false,
-      "courses": ["hickory-hill", "tree-house", "swanson-meadows"],
-      "daysOfWeek": [1, 2, 3, 4, 5],
+      "courses": [
+        "hickory-hill",
+        "tree-house",
+        "swanson-meadows"
+      ],
+      "daysOfWeek": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "timeFrom": "16:00",
       "timeTo": "19:00",
       "holes": 9,
       "minSpots": 2,
       "maxGreenFee": 40
+    },
+    {
+      "label": "Pine Valley · Sat, Sep 12",
+      "enabled": true,
+      "courses": [
+        "pine-valley"
+      ],
+      "dates": [
+        "2026-09-12"
+      ],
+      "timeFrom": "07:00",
+      "timeTo": "08:00",
+      "minSpots": 2,
+      "holes": 18
     }
   ]
 }

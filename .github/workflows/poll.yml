@@ -46,19 +46,27 @@ jobs:
           DAYS_AHEAD: '8'
         run: node src/index.js
 
-      - name: Commit the results
+  - name: Commit the results
         run: |
           git config user.name  "golf-oclock-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/teetimes.json data/seen.json
           if git diff --staged --quiet; then
             echo "No change in availability."
-          else
-            git commit -m "tee times $(date -u +'%Y-%m-%d %H:%M UTC')"
-            # Another run may have landed first; rebase rather than fail.
-            git pull --rebase --autostash origin main || true
-            git push
+            exit 0
           fi
+          git commit -m "tee times $(date -u +'%Y-%m-%d %H:%M UTC')"
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "Pushed on attempt $i."
+              exit 0
+            fi
+            echo "Push rejected (attempt $i) — rebasing onto latest main."
+            git pull --rebase --autostash origin main || git rebase --abort || true
+            sleep $((i * 3))
+          done
+          echo "::warning::Could not push after 5 attempts; the next poll will carry them."
+          exit 0
 
       - name: Stage the site
         run: |

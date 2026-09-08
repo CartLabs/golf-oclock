@@ -1,0 +1,80 @@
+name: Poll tee times
+
+on:
+  schedule:
+    # Every 15 minutes, 5am–10pm Eastern (09:00–03:00 UTC). Cron here is UTC.
+    - cron: '*/15 9-23,0-3 * * *'
+  workflow_dispatch:        # lets you run it by hand from the Actions tab
+  push:
+    branches: [main]
+    paths:
+      - 'config/**'
+      - 'src/**'
+      - 'web/**'
+      - '.github/workflows/poll.yml'
+
+concurrency:
+  group: poll
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run the poller
+        env:
+          # Push target. Set this in Settings → Secrets and variables → Actions.
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
+          # Course logins. Add a pair per course that needs one; the names must
+          # match "credentialKey" in config/courses.json.
+          GOLF_NABNASSET_USER: ${{ secrets.GOLF_NABNASSET_USER }}
+          GOLF_NABNASSET_PASS: ${{ secrets.GOLF_NABNASSET_PASS }}
+          GOLF_TRULLBROOK_USER: ${{ secrets.GOLF_TRULLBROOK_USER }}
+          GOLF_TRULLBROOK_PASS: ${{ secrets.GOLF_TRULLBROOK_PASS }}
+          DAYS_AHEAD: '8'
+        run: node src/index.js
+
+      - name: Commit the results
+        run: |
+          git config user.name  "golf-oclock-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/teetimes.json data/seen.json
+          if git diff --staged --quiet; then
+            echo "No change in availability."
+          else
+            git commit -m "tee times $(date -u +'%Y-%m-%d %H:%M UTC')"
+            # Another run may have landed first; rebase rather than fail.
+            git pull --rebase --autostash origin main || true
+            git push
+          fi
+
+      - name: Stage the site
+        run: |
+          mkdir -p web/data
+          cp data/teetimes.json web/data/teetimes.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: poll
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

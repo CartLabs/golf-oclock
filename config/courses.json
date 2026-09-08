@@ -1,0 +1,201 @@
+{
+  "_comment": "Course registry. 'enabled: false' skips a course entirely. Add or remove courses here — no code changes needed.",
+  "courses": [
+    {
+      "id": "hickory-hill",
+      "name": "Hickory Hill Golf Course",
+      "town": "Methuen",
+      "state": "MA",
+      "platform": "foreup",
+      "enabled": true,
+      "bookingUrl": "https://foreupsoftware.com/index.php/booking/19557/1829#/teetimes",
+      "foreup": { "courseId": 19557, "scheduleId": 1829, "bookingClass": 1443 }
+    },
+    {
+      "id": "passaconaway",
+      "name": "Passaconaway Country Club",
+      "town": "Litchfield",
+      "state": "NH",
+      "platform": "foreup",
+      "enabled": true,
+      "bookingUrl": "https://foreupsoftware.com/index.php/booking/20363/4577#/teetimes",
+      "foreup": { "courseId": 20363, "scheduleId": 4577, "bookingClass": null }
+    },
+    {
+      "id": "hidden-creek",
+      "name": "Hidden Creek Golf Course",
+      "town": "Litchfield",
+      "state": "NH",
+      "platform": "foreup",
+      "enabled": true,
+      "bookingUrl": "https://foreupsoftware.com/index.php/booking/20454/4585#/teetimes",
+      "foreup": { "courseId": 20454, "scheduleId": 4585, "bookingClass": null }
+    },
+    {
+      "id": "hoodkroft",
+      "name": "Hoodkroft Country Club",
+      "town": "Derry",
+      "state": "NH",
+      "platform": "foreup",
+      "enabled": true,
+      "bookingUrl": "https://foreupsoftware.com/index.php/booking/18836#/teetimes",
+      "foreup": { "courseId": 18836, "scheduleId": 3372, "bookingClass": 5165 }
+    },
+    {
+      "id": "nabnasset",
+      "name": "Nabnasset Lake Country Club",
+      "town": "Westford",
+      "state": "MA",
+      "platform": "foreup",
+      "enabled": false,
+      "requiresAuth": true,
+      "credentialKey": "NABNASSET",
+      "bookingUrl": "https://foreupsoftware.com/index.php/booking/21549#/teetimes",
+      "foreup": { "courseId": 21549, "scheduleId": null, "bookingClass": null },
+      "_note": "PRIVATE / members-only. Set enabled:true and add GOLF_NABNASSET_USER + GOLF_NABNASSET_PASS secrets once you have a membership. scheduleId still needs to be captured after first login."
+    },
+
+    {
+      "id": "merrimack-valley",
+      "name": "Merrimack Valley Golf Club",
+      "town": "Methuen",
+      "state": "MA",
+      "platform": "teeitup",
+      "enabled": true,
+      "bookingUrl": "https://merrimack-valley-golf-club.book.teeitup.com",
+      "teeitup": { "alias": "merrimack-valley-golf-club", "facilityIds": null }
+    },
+    {
+      "id": "chelmsford",
+      "name": "Chelmsford Country Club",
+      "town": "Chelmsford",
+      "state": "MA",
+      "platform": "teeitup",
+      "enabled": true,
+      "bookingUrl": "https://chelmsford-country-club.book.teeitup.golf/",
+      "teeitup": { "alias": "chelmsford-country-club", "facilityIds": null }
+    },
+    {
+      "id": "quail-ridge",
+      "name": "Quail Ridge Country Club",
+      "town": "Acton",
+      "state": "MA",
+      "platform": "teeitup",
+      "enabled": true,
+      "bookingUrl": "https://quailridge-country-club.book.teeitup.com/",
+      "teeitup": { "alias": "quailridge-country-club", "facilityIds": null }
+    },
+    {
+      "id": "crystal-lake",
+      "name": "Crystal Lake Golf Club",
+      "town": "Haverhill",
+      "state": "MA",
+      "platform": "teeitup",
+      "enabled": true,
+      "bookingUrl": "https://crystal-lake-golf.book.teeitup.com/",
+      "teeitup": { "alias": "crystal-lake-golf", "facilityIds": [13676] }
+    },
+    {
+      "id": "windham",
+      "name": "Windham Country Club",
+      "town": "Windham",
+      "state": "NH",
+      "platform": "teeitup",
+      "enabled": true,
+      "bookingUrl": "https://windham-country.book.teeitup.com/",
+      "teeitup": { "alias": "windham-country", "facilityIds": null }
+    },
+    {
+      "id": "campbells",
+      "name": "Campbell's Scottish Highlands",
+      "town": "Salem",
+      "state": "NH",
+      "platform": "teeitup",
+      "enabled": true,
+      "bookingUrl": "https://6391c422-2e57-4bc3-a1b3-8a6676c82588.book.teeitup.com/?course=15773",
+      "teeitup": { "alias": "6391c422-2e57-4bc3-a1b3-8a6676c82588", "facilityIds": [15773] }
+    },
+
+    {
+      "id": "billerica",
+      "name": "Country Club of Billerica",
+      "town": "Billerica",
+      "state": "MA",
+      "platform": "chronogolf",
+      "enabled": true,
+      "bookingUrl": "https://www.chronogolf.com/club/country-club-of-billerica",
+      "chronogolf": {
+        "slug": "country-club-of-billerica",
+        "clubId": 7245,
+        "courseUuids": ["bcad5a1d-e640-449c-9891-a0db426e3204"],
+        "holes": [9, 18]
+      }
+    },
+    {
+      "id": "whip-poor-will",
+      "name": "Whip Poor Will Golf Club",
+      "town": "Hudson",
+      "state": "NH",
+      "platform": "chronogolf",
+      "enabled": true,
+      "bookingUrl": "https://www.chronogolf.com/club/whip-poor-will-golf-course",
+      "chronogolf": {
+        "slug": "whip-poor-will-golf-course",
+        "clubId": 9834,
+        "courseUuids": ["28fc945e-1336-4998-928a-949f9136dd43"],
+        "holes": [9]
+      }
+    },
+    {
+      "id": "overlook",
+      "name": "Overlook Golf Club",
+      "town": "Hollis",
+      "state": "NH",
+      "platform": "chronogolf",
+      "enabled": true,
+      "bookingUrl": "https://www.chronogolf.com/club/overlook-golf-club",
+      "chronogolf": {
+        "slug": "overlook-golf-club",
+        "clubId": 19299,
+        "courseUuids": ["c8913361-ea13-4fa3-8af8-a82c552fdc17"],
+        "holes": [9, 18]
+      }
+    },
+    {
+      "id": "souhegan-woods",
+      "name": "Souhegan Woods Golf Club",
+      "town": "Amherst",
+      "state": "NH",
+      "platform": "chronogolf",
+      "enabled": true,
+      "bookingUrl": "https://www.chronogolf.com/club/souhegan-woods-golf-club",
+      "chronogolf": {
+        "slug": "souhegan-woods-golf-club",
+        "clubId": 9821,
+        "courseUuids": ["8b7879a8-f03e-44d2-87f7-991ffadd6607"],
+        "holes": [9, 18]
+      }
+    },
+
+    {
+      "id": "tree-house",
+      "name": "The Course @ Tree House",
+      "town": "Tewksbury",
+      "state": "MA",
+      "platform": "teewire",
+      "enabled": true,
+      "bookingUrl": "https://teewire.app/treehouse/index.php?controller=FrontV2&action=load&cid=1",
+      "teewire": { "tenant": "treehouse", "calendarId": 1 }
+    },
+    {
+      "id": "swanson-meadows",
+      "name": "Swanson Meadows Golf Course",
+      "town": "N. Billerica",
+      "state": "MA",
+      "platform": "teewire",
+      "enabled": true,
+      "bookingUrl": "https://teewire.app/swansonmeadows/index.php?controller=FrontV2&action=load&cid=1",
+      "teewire": { "tenant": "swansonmeadows", "calendarId": 1 }
+    }
+  ]
+}

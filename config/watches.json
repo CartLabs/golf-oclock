@@ -1,0 +1,38 @@
+{
+  "_comment": "Your alert rules. A rule fires when a NEWLY OPEN slot matches it. Edit freely — no code changes needed.",
+  "_fields": {
+    "label": "What the push notification calls this rule.",
+    "courses": "Course ids from courses.json, or [\"any\"] for all of them.",
+    "dates": "Specific dates [\"2026-09-20\"], or omit and use daysOfWeek instead.",
+    "daysOfWeek": "0=Sun .. 6=Sat. Omit for any day.",
+    "withinDays": "Only consider slots this many days out (default: the whole polled window).",
+    "timeFrom / timeTo": "24-hour local window, inclusive.",
+    "holes": "9, 18, or omit for either.",
+    "minSpots": "Minimum open spots (e.g. 4 for a foursome).",
+    "maxGreenFee": "Only alert at or under this green fee, in dollars. Omit for any price.",
+    "enabled": "false to mute a rule without deleting it."
+  },
+  "watches": [
+    {
+      "label": "Weekend morning foursome",
+      "enabled": true,
+      "courses": ["any"],
+      "daysOfWeek": [0, 6],
+      "timeFrom": "06:00",
+      "timeTo": "10:30",
+      "holes": 18,
+      "minSpots": 4
+    },
+    {
+      "label": "Weekday twilight 9",
+      "enabled": false,
+      "courses": ["hickory-hill", "tree-house", "swanson-meadows"],
+      "daysOfWeek": [1, 2, 3, 4, 5],
+      "timeFrom": "16:00",
+      "timeTo": "19:00",
+      "holes": 9,
+      "minSpots": 2,
+      "maxGreenFee": 40
+    }
+  ]
+}

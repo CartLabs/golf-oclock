@@ -2,8 +2,32 @@
 
 export const TZ = 'America/New_York';
 
-/** Fetch JSON with a timeout, a browser-ish UA, and one retry on transient failure. */
-export async function getJson(url, { headers = {}, timeoutMs = 20000, retries = 1 } = {}) {
+/** Headers that make us look like an ordinary browser rather than a bare script. */
+const BROWSER_HEADERS = {
+  'accept': 'application/json, text/plain, */*',
+  'accept-language': 'en-US,en;q=0.9',
+  'user-agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
+  'sec-ch-ua': '"Chromium";v="148", "Not(A:Brand";v="24", "Google Chrome";v="148"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"Windows"',
+  'sec-fetch-dest': 'empty',
+  'sec-fetch-mode': 'cors',
+  'sec-fetch-site': 'same-origin',
+};
+
+/** Statuses worth waiting out rather than giving up on. */
+const RETRYABLE = new Set([408, 429, 500, 502, 503, 504]);
+
+/**
+ * Fetch JSON with a timeout and browser-ish headers.
+ *
+ * Retries on rate limits and transient 5xx with exponential backoff, honouring
+ * Retry-After when the server sends it. On a hard failure the error carries a
+ * snippet of the response body — that's what tells us whether a 403 is
+ * Cloudflare blocking the runner's IP or something we can actually fix.
+ */
+export async function getJson(url, { headers = {}, timeoutMs = 20000, retries = 2 } = {}) {
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const ctrl = new AbortController();
@@ -11,19 +35,32 @@ export async function getJson(url, { headers = {}, timeoutMs = 20000, retries = 
     try {
       const res = await fetch(url, {
         signal: ctrl.signal,
-        headers: {
-          'accept': 'application/json, text/plain, */*',
-          'accept-language': 'en-US,en;q=0.9',
-          'user-agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
-          ...headers,
-        },
+        headers: { ...BROWSER_HEADERS, ...headers },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        const hint = body.replace(/\s+/g, ' ').trim().slice(0, 160);
+        const err = new Error(`HTTP ${res.status} for ${url}${hint ? ` :: ${hint}` : ''}`);
+        err.status = res.status;
+
+        if (RETRYABLE.has(res.status) && attempt < retries) {
+          const retryAfter = Number(res.headers.get('retry-after'));
+          const wait = Number.isFinite(retryAfter) && retryAfter > 0
+            ? Math.min(retryAfter * 1000, 15000)
+            : 1500 * Math.pow(2, attempt);   // 1.5s, 3s, 6s
+          await sleep(wait);
+          lastErr = err;
+          continue;
+        }
+        throw err;
+      }
       return await res.json();
     } catch (err) {
       lastErr = err;
-      if (attempt < retries) await sleep(1200 * (attempt + 1));
+      // Network-level failures (not HTTP statuses) get a plain backoff.
+      if (err.status == null && attempt < retries) await sleep(1200 * (attempt + 1));
+      else if (err.status != null && !RETRYABLE.has(err.status)) throw err;
     } finally {
       clearTimeout(timer);
     }

@@ -113,4 +113,73 @@ t('seen keys only retain in-range dates', () => {
   assert.equal(keys.length, 2);
 });
 
+/* ── network resilience (stubbed fetch, no real requests) ────────────── */
+import { getJson } from '../src/lib.js';
+
+const realFetch = globalThis.fetch;
+function stubFetch(responses) {
+  var i = 0;
+  const calls = [];
+  globalThis.fetch = async function (url, opts) {
+    calls.push({ url, headers: opts && opts.headers });
+    const r = responses[Math.min(i++, responses.length - 1)];
+    return {
+      ok: r.status >= 200 && r.status < 300,
+      status: r.status,
+      headers: { get: (k) => (r.headers || {})[k.toLowerCase()] || null },
+      json: async () => r.body,
+      text: async () => (typeof r.body === 'string' ? r.body : JSON.stringify(r.body || '')),
+    };
+  };
+  return calls;
+}
+const at = async (name, fn) => {
+  try { await fn(); console.log(`  ok  ${name}`); passed++; }
+  catch (e) { console.error(`  FAIL ${name}\n       ${e.message}`); process.exitCode = 1; }
+};
+
+console.log('network resilience');
+
+await at('retries a 429 and then succeeds', async () => {
+  const calls = stubFetch([
+    { status: 429, body: 'Too Many Requests' },
+    { status: 200, body: { ok: true } },
+  ]);
+  const out = await getJson('https://example.test/a');
+  assert.deepEqual(out, { ok: true });
+  assert.equal(calls.length, 2);
+});
+
+await at('gives up on a 403 without retrying', async () => {
+  const calls = stubFetch([{ status: 403, body: 'Attention Required! | Cloudflare' }]);
+  await assert.rejects(() => getJson('https://example.test/b'), /HTTP 403/);
+  assert.equal(calls.length, 1, 'should not retry a non-retryable status');
+});
+
+await at('puts the response body in the error so failures are diagnosable', async () => {
+  stubFetch([{ status: 403, body: 'Attention Required! | Cloudflare' }]);
+  try { await getJson('https://example.test/c'); assert.fail('should have thrown'); }
+  catch (e) { assert.match(e.message, /Cloudflare/); }
+});
+
+await at('sends browser-like headers by default', async () => {
+  const calls = stubFetch([{ status: 200, body: {} }]);
+  await getJson('https://example.test/d');
+  assert.match(calls[0].headers['user-agent'], /Chrome/);
+  assert.ok(calls[0].headers['accept-language']);
+});
+
+await at('lets an adapter add its own headers', async () => {
+  const calls = stubFetch([{ status: 200, body: {} }]);
+  await getJson('https://example.test/e', { headers: { referer: 'https://teewire.app/x' } });
+  assert.equal(calls[0].headers.referer, 'https://teewire.app/x');
+});
+
+await at('eventually gives up and surfaces the last error', async () => {
+  stubFetch([{ status: 503, body: 'down' }]);
+  await assert.rejects(() => getJson('https://example.test/f', { retries: 1 }), /HTTP 503/);
+});
+
+globalThis.fetch = realFetch;
+
 console.log(`\n${passed} checks passed.`);

@@ -1,12 +1,11 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "releaseDate": "2026-09-08",
-  "releaseName": "First release",
+  "releaseName": "Chronogolf pagination fix",
   "notes": [
-    "Polls 16 public courses across foreUP, TeeItUp, Chronogolf and TeeWire every 15 minutes.",
-    "Push alerts via ntfy when a tee time matching one of your watch rules opens up.",
-    "Filter by date, holes, party size, time window, green fee and course.",
-    "Light-first design tuned for reading outdoors; follows your phone into dark mode at night.",
-    "No external fonts or scripts — installs to the home screen and works with no signal."
+    "Chronogolf tee times were being truncated at 24 per course per day — late afternoon and twilight slots were silently missing. Now pages through every result.",
+    "Chronogolf requests are throttled and back off on rate limits, which was causing three of the four courses to drop out entirely.",
+    "Failed requests now record the server's response, so a blocked course explains itself instead of just saying 403.",
+    "TeeWire requests send full browser headers in an attempt to get past Cloudflare from the scheduler."
   ]
 }

@@ -6,12 +6,27 @@ export async function fetchTeewire(course, dates) {
   const { tenant, calendarId } = course.teewire;
   const slots = [];
 
+  // TeeWire sits behind Cloudflare. From a residential browser this endpoint is
+  // wide open; from a datacenter IP it can answer 403. Sending the same headers
+  // a real page-load would send (notably Referer and an XHR marker) is the cheap
+  // fix worth trying before falling back to a headless browser.
+  const pageUrl =
+    `https://teewire.app/${tenant}/index.php?controller=FrontV2&action=load&cid=${calendarId}`;
+
   for (const date of dates) {
     const url =
       `https://teewire.app/${tenant}/online/application/web/api/golf-api.php` +
       `?action=tee-times&calendar_id=${calendarId}&date=${date}&starting_tee=1`;
 
-    const payload = await getJson(url);
+    const payload = await getJson(url, {
+      headers: {
+        'referer': pageUrl,
+        'x-requested-with': 'XMLHttpRequest',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-dest': 'empty',
+      },
+    });
     if (!payload?.success) continue;
 
     for (const t of payload.data?.tee_times || []) {

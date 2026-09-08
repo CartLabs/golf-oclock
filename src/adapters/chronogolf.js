@@ -13,7 +13,25 @@ import { getJson, utcToLocalParts, normalizeTime, to12h, sleep } from '../lib.js
 const BASE = 'https://www.chronogolf.com/marketplace/v2';
 const PAGE_SIZE = 24;
 const MAX_PAGES = 12;              // ~288 slots/day/course; far beyond real volume
-const THROTTLE_MS = Number(process.env.CHRONOGOLF_THROTTLE_MS || 900);
+
+// Chronogolf's rate limit is a budget across the WHOLE run, not per course —
+// the third and fourth courses were being refused on their first request
+// because earlier courses had already spent it. Hence a generous throttle and
+// a patient backoff rather than a tight loop.
+// Read lazily so tests (and one-off runs) can turn the throttle down via env.
+const throttleMs = () =>
+  process.env.CHRONOGOLF_THROTTLE_MS != null
+    ? Number(process.env.CHRONOGOLF_THROTTLE_MS)
+    : 2000;
+const retries = () => Number(process.env.CHRONOGOLF_RETRIES || 4);   // waits ~1.5s→12s
+
+// A course only sells so far ahead (4–14 days here). Once we hit two empty days
+// in a row we're past its booking window, so stop burning requests on dates that
+// cannot have times. Two in a row, not one, so a single sold-out day can't
+// truncate the rest of the week.
+const EMPTY_DAYS_BEFORE_STOP = 2;
+
+const jitter = () => throttleMs() + Math.floor(Math.random() * 400);
 
 /** Resolve course UUIDs from the club slug, if they aren't pinned in the registry. */
 async function resolveCourses(slug) {
@@ -26,12 +44,12 @@ async function fetchDay(courseUuid, date) {
   const rows = [];
   for (let page = 1; page <= MAX_PAGES; page++) {
     const url = `${BASE}/teetimes?start_date=${date}&course_ids=${courseUuid}&page=${page}`;
-    const payload = await getJson(url);
+    const payload = await getJson(url, { retries: retries() });
     const batch = payload.teetimes || [];
     rows.push(...batch);
 
     if (batch.length < PAGE_SIZE) break;   // short page = last page
-    await sleep(THROTTLE_MS);
+    await sleep(jitter());
   }
   return rows;
 }
@@ -45,12 +63,19 @@ export async function fetchChronogolf(course, dates) {
   const slots = [];
   let first = true;
 
-  for (const date of dates) {
-    for (const t of targets) {
-      if (!first) await sleep(THROTTLE_MS);
+  // Walk course-by-course rather than date-by-date, so the empty-day counter
+  // below tracks one course's booking window at a time.
+  for (const t of targets) {
+    let emptyRun = 0;
+
+    for (const date of dates) {
+      if (emptyRun >= EMPTY_DAYS_BEFORE_STOP) break;   // past this course's window
+
+      if (!first) await sleep(jitter());
       first = false;
 
       const rows = await fetchDay(t.uuid, date);
+      emptyRun = rows.length ? 0 : emptyRun + 1;
 
       for (const r of rows) {
         if (r.frozen) continue;

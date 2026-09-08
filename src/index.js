@@ -9,7 +9,7 @@ import { fetchTeeitup } from './adapters/teeitup.js';
 import { fetchChronogolf } from './adapters/chronogolf.js';
 import { fetchTeewire } from './adapters/teewire.js';
 import { dateWindow, settle, sleep, todayLocal } from './lib.js';
-import { findNewMatches, currentKeys } from './alerts.js';
+import { findNewMatches, currentKeys, mergeSeen, hotTargets } from './alerts.js';
 import { sendPush } from './notify.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -36,6 +36,10 @@ const readJson = async (f, fallback) => {
 
 async function main() {
   const noAlerts = process.argv.includes('--no-alerts');
+  // --hot: poll ONLY the courses and dates you have live alerts on. A handful
+  // of requests instead of 15 courses x 8 days, so it can run every few minutes
+  // and cut the time between a slot opening and your phone buzzing.
+  const hot = process.argv.includes('--hot');
   const only = getFlag('--only');
 
   const { courses } = await readJson('config/courses.json', { courses: [] });
@@ -45,24 +49,65 @@ async function main() {
   let active = courses.filter((c) => c.enabled !== false);
   if (only) active = active.filter((c) => c.id === only);
 
-  const dates = dateWindow(DAYS_AHEAD);
-  console.log(`Polling ${active.length} courses × ${DAYS_AHEAD} days (from ${dates[0]})`);
+  let dates = dateWindow(DAYS_AHEAD);
 
-  const results = [];
-  for (const course of active) {
-    const adapter = ADAPTERS[course.platform];
-    if (!adapter) {
-      results.push({ label: course.id, ok: false, error: `no adapter for "${course.platform}"` });
-      continue;
+  if (hot) {
+    const target = hotTargets(watches, active.map((c) => c.id), dates);
+    active = active.filter((c) => target.courseIds.includes(c.id));
+    dates = target.dates;
+    if (!active.length || !dates.length) {
+      console.log('Fast poll: no live alerts to watch. Nothing to do.');
+      return;
     }
-    const r = await settle(course.id, () => adapter(course, dates));
-    results.push(r);
-    console.log(
-      r.ok ? `  ok   ${course.id.padEnd(18)} ${r.value.length} slots`
-           : `  FAIL ${course.id.padEnd(18)} ${r.error}`
-    );
-    await sleep(DELAY_BETWEEN_COURSES_MS);
+    console.log(`Fast poll: ${active.length} course(s) × ${dates.length} date(s) — ${dates.join(', ')}`);
+  } else {
+    console.log(`Polling ${active.length} courses × ${DAYS_AHEAD} days (from ${dates[0]})`);
   }
+
+  // Platforms run in PARALLEL; courses within a platform stay sequential.
+  //
+  // Each platform is a different host with its own rate limit, so there is no
+  // reason to make foreUP wait for Chronogolf. Chronogolf is the long pole —
+  // it self-throttles hard to stay under a shared budget — and running it
+  // alongside the others turns a run from "sum of all platforms" into "the
+  // slowest platform", without touching the throttling that keeps it clean.
+  const groups = new Map();
+  for (const c of active) {
+    if (!groups.has(c.platform)) groups.set(c.platform, []);
+    groups.get(c.platform).push(c);
+  }
+
+  const timings = {};
+  const started = Date.now();
+
+  const groupResults = await Promise.all(
+    [...groups.entries()].map(async ([platform, list]) => {
+      const t0 = Date.now();
+      const out = [];
+      const log = [];
+      const adapter = ADAPTERS[platform];
+
+      for (const course of list) {
+        if (!adapter) {
+          out.push({ label: course.id, ok: false, error: `no adapter for "${platform}"` });
+          continue;
+        }
+        const r = await settle(course.id, () => adapter(course, dates));
+        out.push(r);
+        log.push(r.ok ? `  ok   ${course.id.padEnd(18)} ${r.value.length} slots`
+                      : `  FAIL ${course.id.padEnd(18)} ${r.error}`);
+        await sleep(DELAY_BETWEEN_COURSES_MS);
+      }
+
+      timings[platform] = Math.round((Date.now() - t0) / 1000);
+      // Print each platform's block together rather than interleaved.
+      console.log(`\n[${platform}] ${timings[platform]}s\n` + log.join('\n'));
+      return out;
+    })
+  );
+
+  const results = groupResults.flat();
+  timings._totalSeconds = Math.round((Date.now() - started) / 1000);
 
   const slots = results.filter((r) => r.ok).flatMap((r) => r.value);
   slots.sort((a, b) =>
@@ -88,12 +133,32 @@ async function main() {
   // --- write outputs ------------------------------------------------------
   await mkdir(p('data'), { recursive: true });
 
+  if (hot) {
+    // Only the alert state is ours to update — teetimes.json belongs to the
+    // full poll, and writing a partial view here would wipe 11 courses out of
+    // the app.
+    const today0 = todayLocal();
+    await writeFile(p('data/seen.json'), JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      keys: mergeSeen(
+        prev.keys || [],
+        active.map((c) => c.id),
+        currentKeys(slots.filter((s) => s.date >= today0))
+      ),
+    }, null, 0));
+    console.log(`\nFast poll done in ${timings._totalSeconds}s — ${slots.length} slots checked, ${hits.length} alert(s).`);
+    return;
+  }
+
   await writeFile(p('data/teetimes.json'), JSON.stringify({
     updatedAt: new Date().toISOString(),
     timezone: 'America/New_York',
     daysAhead: DAYS_AHEAD,
     courseCount: active.length,
     slotCount: slots.length,
+    // Per-platform wall time, so run-length regressions are visible in the data
+    // rather than needing the Actions log.
+    timings,
     failures,
     courses: active.map((c) => ({
       id: c.id, name: c.name, town: c.town, state: c.state,
@@ -111,7 +176,9 @@ async function main() {
     keys: currentKeys(slots.filter((s) => s.date >= today)),
   }, null, 0));
 
-  console.log(`\nWrote ${slots.length} slots across ${active.length} courses.`);
+  console.log(`\nWrote ${slots.length} slots across ${active.length} courses in ${timings._totalSeconds}s.`);
+  console.log('Per-platform: ' + Object.keys(timings).filter(k => k[0] !== '_')
+    .map(k => k + ' ' + timings[k] + 's').join(', '));
   if (failures.length) {
     console.log(`${failures.length} course(s) failed — see data/teetimes.json "failures".`);
   }

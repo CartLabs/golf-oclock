@@ -1,7 +1,7 @@
 // Offline tests for the logic that decides whether your phone buzzes.
 // No network. Run with: npm test
 import assert from 'node:assert/strict';
-import { matchesWatch, findNewMatches, currentKeys } from '../src/alerts.js';
+import { matchesWatch, findNewMatches, currentKeys, mergeSeen, hotTargets } from '../src/alerts.js';
 import { to12h, normalizeTime, utcToLocalParts, addDays, slotKey } from '../src/lib.js';
 
 let passed = 0;
@@ -113,6 +113,47 @@ t('seen keys only retain in-range dates', () => {
   assert.equal(keys.length, 2);
 });
 
+console.log('fast poll targeting');
+const ALL = ['pine-valley','hickory-hill','billerica'];
+const DATES = ['2026-09-12','2026-09-13','2026-09-14','2026-09-15'];  // Sat..Tue
+
+t('a one-off watch targets only its course and date', () => {
+  const r = hotTargets([{ enabled:true, courses:['pine-valley'], dates:['2026-09-13'] }], ALL, DATES);
+  assert.deepEqual(r.courseIds, ['pine-valley']);
+  assert.deepEqual(r.dates, ['2026-09-13']);
+});
+t('"any course" expands to every course', () => {
+  const r = hotTargets([{ enabled:true, courses:['any'], dates:['2026-09-12'] }], ALL, DATES);
+  assert.equal(r.courseIds.length, 3);
+});
+t('a day-of-week watch picks the matching dates only', () => {
+  const r = hotTargets([{ enabled:true, courses:['billerica'], daysOfWeek:[0,6] }], ALL, DATES);
+  assert.deepEqual(r.dates, ['2026-09-12','2026-09-13']);   // Sat + Sun
+});
+t('disabled and fully-past watches are skipped', () => {
+  assert.deepEqual(hotTargets([{ enabled:false, courses:['pine-valley'], dates:['2026-09-13'] }], ALL, DATES).courseIds, []);
+  assert.deepEqual(hotTargets([{ enabled:true, courses:['pine-valley'], dates:['2020-01-01'] }], ALL, DATES).courseIds, []);
+});
+t('no live watches means nothing to poll', () => {
+  const r = hotTargets([], ALL, DATES);
+  assert.equal(r.courseIds.length, 0);
+  assert.equal(r.dates.length, 0);
+});
+
+console.log('partial-poll seen state');
+t('a partial poll does not make other courses look new', () => {
+  const prev = ['pine-valley|2026-09-12|07:00|18|f', 'billerica|2026-09-12|08:00|18|f'];
+  const fresh = ['pine-valley|2026-09-12|09:00|18|f'];
+  const merged = mergeSeen(prev, ['pine-valley'], fresh);
+  assert.ok(merged.includes('billerica|2026-09-12|08:00|18|f'), 'unpolled course must be preserved');
+  assert.ok(merged.includes('pine-valley|2026-09-12|09:00|18|f'));
+  assert.ok(!merged.includes('pine-valley|2026-09-12|07:00|18|f'), 'polled course state is replaced');
+});
+t('merging is idempotent', () => {
+  const prev = ['a|d|07:00|18|f'];
+  assert.deepEqual(mergeSeen(prev, ['a'], ['a|d|07:00|18|f']), prev);
+});
+
 /* ── network resilience (stubbed fetch, no real requests) ────────────── */
 import { getJson } from '../src/lib.js';
 
@@ -178,6 +219,72 @@ await at('lets an adapter add its own headers', async () => {
 await at('eventually gives up and surfaces the last error', async () => {
   stubFetch([{ status: 503, body: 'down' }]);
   await assert.rejects(() => getJson('https://example.test/f', { retries: 1 }), /HTTP 503/);
+});
+
+/* ── Chronogolf paging + booking-window stop ─────────────────────────── */
+import { fetchChronogolf } from '../src/adapters/chronogolf.js';
+
+process.env.CHRONOGOLF_THROTTLE_MS = '0';   // don't make the suite wait
+
+const cgCourse = {
+  id: 'test-cg', name: 'Test CC', town: 'X', state: 'MA',
+  bookingUrl: 'https://example.test/club',
+  chronogolf: { slug: 'test', courseUuids: ['uuid-1'] },
+};
+const teetime = (t) => ({
+  starts_at: `2026-09-12T${t}:00Z`, max_player_size: 4, min_player_size: 1,
+  hole: 1, frozen: false, default_price: { green_fee: 40, bookable_holes: 18 },
+});
+
+/** Stub that serves `pages` keyed by "date|page". */
+function stubPages(map) {
+  const seen = [];
+  globalThis.fetch = async function (url) {
+    const u = new URL(url);
+    const key = u.searchParams.get('start_date') + '|' + u.searchParams.get('page');
+    seen.push(key);
+    return {
+      ok: true, status: 200,
+      headers: { get: () => null },
+      json: async () => ({ teetimes: map[key] || [] }),
+      text: async () => '',
+    };
+  };
+  return seen;
+}
+
+console.log('chronogolf paging');
+
+await at('follows pagination past the 24-result page cap', async () => {
+  const full = Array.from({ length: 24 }, (_, i) => teetime(String(11 + Math.floor(i / 6)).padStart(2, '0')));
+  const seen = stubPages({
+    '2026-09-12|1': full,
+    '2026-09-12|2': [teetime('20')],   // the twilight slots that were being dropped
+  });
+  const out = await fetchChronogolf(cgCourse, ['2026-09-12']);
+  assert.equal(out.length, 25, 'should include page 2');
+  assert.ok(seen.includes('2026-09-12|2'), 'should have requested page 2');
+});
+
+await at('stops requesting once past the booking window', async () => {
+  const dates = ['2026-09-12','2026-09-13','2026-09-14','2026-09-15','2026-09-16','2026-09-17'];
+  const seen = stubPages({ '2026-09-12|1': [teetime('11')] });   // only day 1 has times
+  await fetchChronogolf(cgCourse, dates);
+  var daysHit = new Set(seen.map(k => k.split('|')[0])).size;
+  assert.equal(daysHit, 3, `should stop after 2 empty days, hit ${daysHit}`);
+});
+
+await at('a single sold-out day does not truncate the rest of the week', async () => {
+  const dates = ['2026-09-12','2026-09-13','2026-09-14','2026-09-15'];
+  const seen = stubPages({
+    '2026-09-12|1': [teetime('11')],
+    // 09-13 empty (sold out)
+    '2026-09-14|1': [teetime('12')],
+    '2026-09-15|1': [teetime('13')],
+  });
+  const out = await fetchChronogolf(cgCourse, dates);
+  assert.equal(new Set(seen.map(k => k.split('|')[0])).size, 4, 'should keep going past one empty day');
+  assert.equal(out.length, 3);
 });
 
 globalThis.fetch = realFetch;

@@ -62,3 +62,52 @@ export function findNewMatches(slots, watches, seenKeys) {
 export function currentKeys(slots) {
   return [...new Set(slots.map(slotKey))];
 }
+
+/**
+ * Merge seen-state when only SOME courses were polled.
+ *
+ * The fast poll only looks at courses you have alerts on. If it simply wrote
+ * its own keys, every other course would look brand new on the next full poll
+ * and you'd get an alert storm. So: drop the keys for courses we just polled
+ * (their current state replaces the old), and keep everyone else's untouched.
+ */
+export function mergeSeen(prevKeys, polledCourseIds, freshKeys) {
+  const polled = new Set(polledCourseIds);
+  const kept = (prevKeys || []).filter((k) => !polled.has(String(k).split('|')[0]));
+  return [...new Set(kept.concat(freshKeys))];
+}
+
+/**
+ * Which courses and dates actually need watching right now.
+ *
+ * Used by the fast poll so it hits a handful of endpoints every few minutes
+ * instead of all 15 courses across 8 days.
+ */
+export function hotTargets(watches, allCourseIds, allDates) {
+  const courseIds = new Set();
+  const dates = new Set();
+  const today = allDates[0];
+
+  for (const w of watches || []) {
+    if (w.enabled === false) continue;
+
+    // A one-off watch whose dates have all passed is dead weight.
+    const wDates = (w.dates || []).filter((d) => d >= today);
+    if (w.dates && w.dates.length && !wDates.length) continue;
+
+    const cs = w.courses || ['any'];
+    (cs.includes('any') ? allCourseIds : cs).forEach((id) => courseIds.add(id));
+
+    if (wDates.length) {
+      wDates.forEach((d) => { if (allDates.includes(d)) dates.add(d); });
+    } else if (w.daysOfWeek && w.daysOfWeek.length) {
+      allDates.forEach((d) => {
+        const dow = new Date(`${d}T12:00:00Z`).getUTCDay();
+        if (w.daysOfWeek.includes(dow)) dates.add(d);
+      });
+    } else {
+      allDates.forEach((d) => dates.add(d));
+    }
+  }
+  return { courseIds: [...courseIds], dates: [...dates].sort() };
+}

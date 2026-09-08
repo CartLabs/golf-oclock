@@ -30,8 +30,13 @@ export async function sendPush(hits) {
     const price = s.greenFee != null ? ` · from $${s.greenFee}` : '';
     const holes = s.holes ? ` · ${s.holes} holes` : '';
 
+    // foreUP always opens today's sheet and ignores a date in the URL, so for
+    // those courses say which day to pick once the page loads.
+    const datedLink = s.platform !== 'foreUP';
+    const nudge = datedLink ? '' : `\nOpens today's sheet — pick ${prettyDate(s.date)}`;
+
     const title = `⛳ ${s.courseName} — ${prettyDate(s.date)}`;
-    const body = `${times.join(', ')}${more}${holes}${price}\n${group[0].watchLabels.join(', ')}`;
+    const body = `${times.join(', ')}${more}${holes}${price}\n${group[0].watchLabels.join(', ')}${nudge}`;
 
     try {
       await fetch(`${SERVER}/${encodeURIComponent(topic)}`, {

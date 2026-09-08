@@ -73,7 +73,10 @@ export async function fetchTeeitup(course, dates) {
               greenFee: v.greenFee,
               cartFee: v.cartFee,
               backNine: !!tt.backNine,
-              bookingUrl: course.bookingUrl,
+              // TeeItUp honours ?date=, so the alert can land straight on the
+              // right day's sheet rather than today's.
+              bookingUrl: course.bookingUrl +
+                (course.bookingUrl.includes('?') ? '&' : '?') + 'date=' + localDate,
             });
           }
         }

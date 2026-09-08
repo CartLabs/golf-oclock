@@ -48,6 +48,20 @@
       "holes": 9,
       "minSpots": 2,
       "maxGreenFee": 40
+    },
+    {
+      "label": "Pine Valley · Sat, Sep 12",
+      "enabled": true,
+      "courses": [
+        "pine-valley"
+      ],
+      "dates": [
+        "2026-09-12"
+      ],
+      "timeFrom": "07:00",
+      "timeTo": "08:00",
+      "minSpots": 2,
+      "holes": 18
     }
   ]
 }

@@ -62,8 +62,10 @@ jobs:
 
       - name: Stage the site
         run: |
-          mkdir -p web/data
+          mkdir -p web/data web/config
           cp data/teetimes.json web/data/teetimes.json
+          # Published so the Alerts screen can show your watches before you connect a token.
+          cp config/watches.json web/config/watches.json
 
       - uses: actions/upload-pages-artifact@v3
         with:

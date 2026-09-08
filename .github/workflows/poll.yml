@@ -3,7 +3,7 @@ name: Poll tee times
 on:
   schedule:
     # Every 15 minutes, 5am–10pm Eastern (09:00–03:00 UTC). Cron here is UTC.
-    - cron: '*/15 9-23,0-3 * * *'
+        - cron: '7,22,37,52 9-23,0-3 * * *'
   workflow_dispatch:        # lets you run it by hand from the Actions tab
   push:
     branches: [main]
@@ -14,7 +14,7 @@ on:
       - '.github/workflows/poll.yml'
 
 concurrency:
-  group: poll
+  group: golf-poll
   cancel-in-progress: false
 
 permissions:

@@ -183,9 +183,10 @@
       "town": "Tewksbury",
       "state": "MA",
       "platform": "teewire",
-      "enabled": true,
+      "enabled": false,
       "bookingUrl": "https://teewire.app/treehouse/index.php?controller=FrontV2&action=load&cid=1",
-      "teewire": { "tenant": "treehouse", "calendarId": 1 }
+      "teewire": { "tenant": "treehouse", "calendarId": 1 },
+      "_note": "DISABLED: Cloudflare JS challenge ('Just a moment...') blocks the GitHub runner. The API itself is open and the adapter works — verified from a normal browser. Set enabled:true to retry; if it still 403s, it needs a headless browser or a poll from a residential IP."
     },
     {
       "id": "swanson-meadows",
@@ -193,9 +194,10 @@
       "town": "N. Billerica",
       "state": "MA",
       "platform": "teewire",
-      "enabled": true,
+      "enabled": false,
       "bookingUrl": "https://teewire.app/swansonmeadows/index.php?controller=FrontV2&action=load&cid=1",
-      "teewire": { "tenant": "swansonmeadows", "calendarId": 1 }
+      "teewire": { "tenant": "swansonmeadows", "calendarId": 1 },
+      "_note": "DISABLED: same Cloudflare block as Tree House."
     }
   ]
 }

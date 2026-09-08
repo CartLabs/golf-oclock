@@ -24,16 +24,17 @@ The phone app is a static page. It never polls a golf course itself — it just 
 
 ## What it covers
 
-**16 public courses across 4 platforms**, all via clean JSON APIs — no HTML scraping:
+**14 public courses across 3 platforms**, all via clean JSON APIs — no HTML scraping:
 
 | Platform | Courses |
 |---|---|
 | foreUP | Hickory Hill, Passaconaway, Hidden Creek, Hoodkroft |
 | TeeItUp | Merrimack Valley, Chelmsford, Quail Ridge, Crystal Lake, Windham, Campbell's Scottish Highlands |
 | Chronogolf | CC of Billerica, Whip Poor Will, Overlook, Souhegan Woods |
-| TeeWire | Tree House, Swanson Meadows |
 
-Deliberately excluded: Mount Pleasant and Londonderry (no online booking at all), Four Oaks / Butter Brook / Candia Woods (Club Prophet, behind a bot wall), Trull Brook and Nabnasset (login required — see *Course logins* below).
+**Disabled but wired up:** Tree House and Swanson Meadows (TeeWire). Their API is open and the adapter works — verified from a normal browser — but Cloudflare's JS challenge blocks GitHub's servers. Flip `enabled` to `true` in `config/courses.json` to retry.
+
+Deliberately excluded: Mount Pleasant and Londonderry (no online booking at all), Four Oaks / Butter Brook / Candia Woods (Club Prophet, same Cloudflare wall), Trull Brook and Nabnasset (login required — see *Course logins* below).
 
 ---
 

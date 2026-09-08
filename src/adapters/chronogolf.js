@@ -19,11 +19,18 @@ const MAX_PAGES = 12;              // ~288 slots/day/course; far beyond real vol
 // because earlier courses had already spent it. Hence a generous throttle and
 // a patient backoff rather than a tight loop.
 // Read lazily so tests (and one-off runs) can turn the throttle down via env.
+// Tuning history: 900ms → three courses lost to 429. 2000ms → still two lost,
+// and WHICH two rotated between runs, confirming a shared budget rather than a
+// per-course one. 3500ms keeps us near ~17 requests/min.
 const throttleMs = () =>
   process.env.CHRONOGOLF_THROTTLE_MS != null
     ? Number(process.env.CHRONOGOLF_THROTTLE_MS)
-    : 2000;
-const retries = () => Number(process.env.CHRONOGOLF_RETRIES || 4);   // waits ~1.5s→12s
+    : 3500;
+const retries = () => Number(process.env.CHRONOGOLF_RETRIES || 6);   // waits ~1.5s→48s
+
+// Extra breathing room when moving to the next course, so one course's paging
+// burst doesn't spend the budget the next course needs.
+const COURSE_GAP_MS = Number(process.env.CHRONOGOLF_COURSE_GAP_MS || 8000);
 
 // A course only sells so far ahead (4–14 days here). Once we hit two empty days
 // in a row we're past its booking window, so stop burning requests on dates that
@@ -67,6 +74,7 @@ export async function fetchChronogolf(course, dates) {
   // below tracks one course's booking window at a time.
   for (const t of targets) {
     let emptyRun = 0;
+    if (!first) await sleep(COURSE_GAP_MS);
 
     for (const date of dates) {
       if (emptyRun >= EMPTY_DAYS_BEFORE_STOP) break;   // past this course's window

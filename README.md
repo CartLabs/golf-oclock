@@ -69,7 +69,18 @@ Open it on your phone and **Add to Home Screen**. It installs like a real app.
 
 ## Setting up your alerts
 
-Edit `config/watches.json`. A rule fires when a slot that matches it *becomes newly open* — you get told once, not every 15 minutes. If a slot gets taken and later frees up again, you get told again.
+**From your phone (easiest).** Tap the bell in the app. The first time, it asks you to connect:
+
+1. On GitHub: **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**
+2. Repository access: **Only select repositories** → this repo
+3. Permissions: **Contents → Read and write**. Nothing else.
+4. Pick an expiry, generate, and paste it into the app
+
+The token is stored only in your phone's browser — never in the repo, never in a commit. It lets the app update `config/watches.json` for you, which is how a rule reaches the poller. Keep it scoped to this one repo: your GitHub Pages address is shared by every project on that account, so a token with wider access would be a wider risk if it leaked.
+
+New alerts take effect on the next poll, within 15 minutes.
+
+**Or edit the file directly.** `config/watches.json` is the source of truth either way. A rule fires when a slot that matches it *becomes newly open* — you get told once, not every 15 minutes. If a slot gets taken and later frees up again, you get told again.
 
 ```json
 {

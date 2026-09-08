@@ -1,10 +1,12 @@
 {
-  "version": "1.0.2",
+  "version": "1.2.0",
   "releaseDate": "2026-09-08",
-  "releaseName": "Pine Valley + home course",
+  "releaseName": "Alerts from your phone",
   "notes": [
-    "Added Pine Valley Golf Course (Pelham, NH) — 15 courses total. Its tee sheet sells 9 or 18 off the same slot, so each time appears once per hole option with its own price.",
-    "Home courses are pinned to the top of the list and marked with a Home tag. Set \"home\": true on any course in config/courses.json.",
-    "Chronogolf tuning settled at a 3.5s request throttle and a 20s gap between courses — all 15 courses now report cleanly."
+    "New Alerts screen: create an alert for a course, date and time window without touching GitHub.",
+    "Live match count while you build a rule, so you can see straight away whether it is too narrow or far too broad.",
+    "Toggle alerts on and off, or delete them, from the same screen. Alerts whose date has passed are flagged.",
+    "Connects with a fine-grained GitHub token you paste in once, scoped to this repo only and stored on your phone.",
+    "Service worker no longer touches cross-origin requests, so authenticated API calls are never cached."
   ]
 }

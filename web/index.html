@@ -10,6 +10,12 @@
 <meta name="theme-color" content="#f7f9f6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101613" media="(prefers-color-scheme: dark)">
 <meta name="description" content="Every open tee time near you, in one place.">
+<meta property="og:title" content="Golf O'Clock">
+<meta property="og:description" content="Every open tee time near you, in one place.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="og.png">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -33,10 +39,16 @@
     --ink-2:     #3d4b43;   /* 8.2:1  — secondary but still sunlight-legible */
     --ink-3:     #66756b;   /* 4.9:1  — smallest details only */
 
-    --green:     #0f7a43;
+    /* Brand: navy + grass green, from the Golf O'Clock mark.
+       --sel is the selected/active fill; --green is the accent used for
+       availability, prices and the home tag. */
+    --navy:      #16295c;
+    --sel:       #16295c;
+    --sel-ink:   #ffffff;
+    --green:     #3f8f37;
     --green-ink: #ffffff;
-    --green-bg:  #e4f2e9;
-    --green-line:#8dc3a5;
+    --green-bg:  #e8f3e4;
+    --green-line:#9ac98a;
 
     --alert:     #a33417;
     --alert-bg:  #fbeae5;
@@ -62,10 +74,15 @@
       --ink-2:     #b3c2b8;
       --ink-3:     #7e8f85;
 
-      --green:     #43c47d;
-      --green-ink: #06180e;
-      --green-bg:  #16291f;
-      --green-line:#2f6b48;
+      /* Navy is too dark to select against a dark ground, so the bright
+         brand green takes over as the selection fill here. */
+      --navy:      #6f8ad6;
+      --sel:       #7cc142;
+      --sel-ink:   #0d1a08;
+      --green:     #7cc142;
+      --green-ink: #0d1a08;
+      --green-bg:  #1c2a16;
+      --green-line:#3f6b2c;
 
       --alert:     #f08a68;
       --alert-bg:  #2b1a14;
@@ -96,7 +113,12 @@
     padding-top: max(12px, calc(env(safe-area-inset-top) + 6px));
   }
   .brand { display: flex; align-items: center; gap: 10px; }
-  .brand svg { width: 24px; height: 24px; flex: none; display: block; }
+  .brand svg { width: 26px; height: 26px; flex: none; display: block; }
+  .mark .m-ring  { fill: none; stroke: var(--green); stroke-width: 1.9; }
+  .mark .m-ball  { fill: #f3f7f3; }
+  .mark .m-hands { fill: none; stroke: #16295c; stroke-width: 1.7; stroke-linecap: round; }
+  .mark .m-dot   { fill: var(--green); }
+  .mark .m-tee   { fill: var(--ink-2); }
   .brand h1 {
     font-size: 19px; font-weight: 700; letter-spacing: -0.02em;
   }
@@ -132,9 +154,9 @@
   .day .num { display: block; font-size: 19px; font-weight: 700; margin: 1px 0; }
   .day .cnt { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
   .day.on {
-    background: var(--green); border-color: var(--green); color: var(--green-ink);
+    background: var(--sel); border-color: var(--sel); color: var(--sel-ink);
   }
-  .day.on .dow, .day.on .cnt { color: var(--green-ink); opacity: .9; }
+  .day.on .dow, .day.on .cnt { color: var(--sel-ink); opacity: .9; }
   .day.zero { opacity: .42; }
 
   /* ─── filters ─── */
@@ -149,7 +171,7 @@
     color: var(--ink-2); font: 600 14px/1 var(--font); cursor: pointer;
   }
   .seg button + button { border-left: 1px solid var(--line-soft); }
-  .seg button.on { background: var(--green); color: var(--green-ink); }
+  .seg button.on { background: var(--sel); color: var(--sel-ink); }
 
   .more-btn {
     min-height: 40px; padding: 0 15px; margin-left: auto;
@@ -259,6 +281,98 @@
     font-size: 11px; color: var(--ink-3);
   }
 
+  /* ─── view switching ─── */
+  body[data-view="alerts"] .days,
+  body[data-view="alerts"] .filters,
+  body[data-view="alerts"] #notice,
+  body[data-view="alerts"] .results,
+  body[data-view="alerts"] footer,
+  body[data-view="alerts"] #loading { display: none; }
+  body:not([data-view="alerts"]) #view-alerts { display: none; }
+
+  .iconbtn {
+    width: 40px; height: 40px; flex: none;
+    border: 1px solid var(--line); border-radius: 50%;
+    background: var(--card); color: var(--ink-2);
+    cursor: pointer; display: grid; place-items: center; position: relative;
+  }
+  .iconbtn svg { width: 19px; height: 19px; display: block; }
+  .iconbtn.on { background: var(--sel); border-color: var(--sel); color: var(--sel-ink); }
+  .iconbtn .badge {
+    position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px;
+    padding: 0 4px; border-radius: 9px; background: var(--green); color: var(--green-ink);
+    font: 700 10px/17px var(--font); text-align: center;
+  }
+  .head-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ─── alerts view ─── */
+  #view-alerts { padding: 14px 16px 28px; display: grid; gap: 13px; }
+  .a-intro { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+
+  .card2 {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 14px; display: grid; gap: 12px;
+  }
+  .card2 h3 { font-size: 15px; font-weight: 700; }
+  .card2 p { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+  .card2 ol { font-size: 13px; color: var(--ink-2); line-height: 1.6; padding-left: 18px; }
+  .card2 code {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--sunk); padding: 1px 5px; border-radius: 4px;
+  }
+
+  .btn {
+    min-height: 44px; padding: 0 16px; border: 1px solid var(--sel);
+    border-radius: var(--r-sm); background: var(--sel); color: var(--sel-ink);
+    font: 700 14px/1 var(--font); cursor: pointer;
+  }
+  .btn.ghost { background: var(--card); color: var(--ink); border-color: var(--line); }
+  .btn.danger { background: var(--card); color: var(--alert); border-color: var(--line); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .watch {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 13px 14px; display: grid; gap: 9px;
+  }
+  .watch.off { opacity: .55; }
+  .watch.expired { border-style: dashed; }
+  .watch-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+  .watch-top h4 { font-size: 15px; font-weight: 700; }
+  .watch dl { display: grid; gap: 3px; font-size: 12.5px; color: var(--ink-2); }
+  .watch .tagrow { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .pill {
+    font: 600 11px/1 var(--font); letter-spacing: .04em; text-transform: uppercase;
+    padding: 5px 9px; border-radius: 999px;
+    border: 1px solid var(--green-line); background: var(--green-bg); color: var(--green);
+  }
+  .pill.grey { border-color: var(--line); background: var(--sunk); color: var(--ink-3); }
+  .pill.warn { border-color: var(--alert); background: var(--alert-bg); color: var(--alert); }
+
+  .switch {
+    position: relative; width: 46px; height: 27px; flex: none;
+    border-radius: 999px; border: 1px solid var(--line);
+    background: var(--sunk); cursor: pointer; padding: 0;
+  }
+  .switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 21px; height: 21px; border-radius: 50%;
+    background: var(--ink-3); transition: transform .15s ease, background .15s ease;
+  }
+  .switch.on { background: var(--green-bg); border-color: var(--green-line); }
+  .switch.on::after { transform: translateX(19px); background: var(--green); }
+
+  .match-note {
+    font-size: 13px; padding: 10px 12px; border-radius: var(--r-sm);
+    border: 1px solid var(--green-line); background: var(--green-bg); color: var(--ink-2);
+  }
+  .match-note.zero { border-color: var(--line); background: var(--sunk); color: var(--ink-3); }
+  .match-note b { color: var(--ink); }
+
+  .save-state { font-size: 13px; color: var(--ink-2); min-height: 18px; }
+  .save-state.err { color: var(--alert); font-weight: 600; }
+  .save-state.ok  { color: var(--green); font-weight: 600; }
+
   .loading { padding: 14px 16px; font-size: 14px; color: var(--ink-2); }
   .loading.err { color: var(--alert); font-weight: 600; }
   .loading:empty { display: none; }
@@ -269,15 +383,25 @@
 <div class="top">
   <header>
     <div class="brand">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M7 21V3l10 3.6L7 10.2" fill="currentColor" opacity=".18"/>
-        <path d="M7 21V3l10 3.6L7 10.2" stroke="currentColor" stroke-width="1.9"
-              stroke-linejoin="round" stroke-linecap="round"/>
-        <circle cx="4.6" cy="20.4" r="1.9" fill="currentColor"/>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="mark">
+        <path class="m-tee" d="M9.7 16.1h4.6a.9.9 0 0 1 0 1.8H9.7a.9.9 0 0 1 0-1.8z"/>
+        <path class="m-tee" d="M10.5 17.6h3l-.45 3.8a1.05 1.05 0 0 1-2.1 0z"/>
+        <circle class="m-ball" cx="12" cy="9.8" r="5.9"/>
+        <circle class="m-ring" cx="12" cy="9.8" r="7.1"/>
+        <path class="m-hands" d="M12 9.8 9.1 6.9M12 9.8l3.5 2.9"/>
+        <circle class="m-dot" cx="12" cy="9.8" r=".95"/>
       </svg>
       <h1>Golf O'Clock</h1>
     </div>
-    <button class="refresh" id="refresh" aria-label="Refresh">&#8635;</button>
+    <div class="head-actions">
+      <button class="iconbtn" id="alerts-btn" aria-label="Alerts" title="Alerts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+        </svg>
+      </button>
+      <button class="refresh" id="refresh" aria-label="Refresh">&#8635;</button>
+    </div>
   </header>
   <nav class="days" id="days" aria-label="Choose a date"></nav>
 </div>
@@ -315,6 +439,8 @@
 
 <div id="notice"></div>
 <main class="results" id="results"></main>
+<section id="view-alerts" aria-label="Alerts"></section>
+
 <footer><span id="updated"></span></footer>
 
 <script>
@@ -560,6 +686,510 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
   }
+
+
+  /* ── alerts ───────────────────────────────────────────────────────────
+     Watches live in config/watches.json in the repo, because the poller
+     that actually fires them runs in GitHub Actions — a phone can't wake
+     itself up to check. So creating an alert here means committing that
+     file, which is what the token is for.
+     ------------------------------------------------------------------ */
+
+  var WATCH_PATH = 'config/watches.json';
+
+  var REPO = (function () {
+    try {
+      var o = JSON.parse(localStorage.getItem('golf.repo') || 'null');
+      if (o && o.owner && o.repo) return o;
+    } catch (e) {}
+    // cartlabs.github.io/golf-oclock/  ->  owner "cartlabs", repo "golf-oclock"
+    var host = (location.hostname || '').split('.')[0];
+    var seg = (location.pathname || '').split('/').filter(Boolean)[0];
+    return { owner: host || 'CartLabs', repo: seg || 'golf-oclock' };
+  })();
+
+  function token() { try { return localStorage.getItem('golf.token') || ''; } catch (e) { return ''; } }
+  function setToken(t) {
+    try { t ? localStorage.setItem('golf.token', t) : localStorage.removeItem('golf.token'); } catch (e) {}
+  }
+
+  var A = { watches: null, raw: null, sha: null, loading: false, error: '',
+            draft: null, saving: false, msg: '', msgKind: '', editing: null };
+
+  function b64encode(str) {
+    var bytes = new TextEncoder().encode(str), bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function b64decode(b64) {
+    var bin = atob(String(b64).replace(/\s/g, '')), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(out);
+  }
+
+  function gh(path, opts) {
+    opts = opts || {};
+    var h = { 'accept': 'application/vnd.github+json' };
+    if (token()) h.authorization = 'Bearer ' + token();
+    if (opts.body) h['content-type'] = 'application/json';
+    return fetch('https://api.github.com/repos/' + REPO.owner + '/' + REPO.repo + path, {
+      method: opts.method || 'GET', headers: h, cache: 'no-store',
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+  }
+
+  function todayLocal() {
+    return new Date().toLocaleDateString('en-CA');   // YYYY-MM-DD
+  }
+
+  function loadWatches() {
+    A.loading = true; A.error = ''; renderAlerts();
+    var finish = function () { A.loading = false; renderAlerts(); };
+
+    if (token()) {
+      gh('/contents/' + WATCH_PATH).then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          throw new Error('GitHub rejected the token. It needs Contents: Read and write on ' + REPO.owner + '/' + REPO.repo + '.');
+        }
+        if (r.status === 404) throw new Error('Could not find ' + WATCH_PATH + ' in ' + REPO.owner + '/' + REPO.repo + '.');
+        if (!r.ok) throw new Error('GitHub returned ' + r.status + '.');
+        return r.json();
+      }).then(function (j) {
+        A.sha = j.sha;
+        A.raw = JSON.parse(b64decode(j.content));
+        A.watches = A.raw.watches || [];
+        finish();
+      }).catch(function (e) { A.error = e.message; finish(); });
+      return;
+    }
+
+    // No token: show the published read-only copy so the screen still works.
+    fetch('config/watches.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { A.raw = j; A.watches = j.watches || []; finish(); })
+      .catch(function () { A.watches = []; finish(); });
+  }
+
+  function saveWatches(after) {
+    if (!token()) return;
+    A.saving = true; A.msg = 'Saving…'; A.msgKind = ''; renderAlerts();
+
+    var payload = {};
+    for (var k in (A.raw || {})) payload[k] = A.raw[k];
+    payload.watches = A.watches;
+
+    var body = {
+      message: 'alerts: ' + A.watches.length + ' watch' + (A.watches.length === 1 ? '' : 'es'),
+      content: b64encode(JSON.stringify(payload, null, 2) + '\n')
+    };
+    if (A.sha) body.sha = A.sha;
+
+    gh('/contents/' + WATCH_PATH, { method: 'PUT', body: body })
+      .then(function (r) {
+        if (r.status === 409 || r.status === 422) {
+          throw new Error('The file changed since you loaded it. Tap Reload, then try again.');
+        }
+        if (r.status === 401 || r.status === 403) {
+          throw new Error('GitHub rejected the token. It needs Contents: Read and write.');
+        }
+        if (!r.ok) {
+          return r.json().catch(function () { return {}; }).then(function (j) {
+            throw new Error(j.message || ('GitHub returned ' + r.status + '.'));
+          });
+        }
+        return r.json();
+      })
+      .then(function (j) {
+        A.sha = j.content.sha;
+        A.msg = 'Saved. Live within 15 minutes, on the next poll.';
+        A.msgKind = 'ok';
+        if (after) after();
+      })
+      .catch(function (e) { A.msg = e.message; A.msgKind = 'err'; })
+      .then(function () { A.saving = false; renderAlerts(); });
+  }
+
+  /* Mirrors src/alerts.js matchesWatch, minus the enabled check, so the
+     preview shows what a rule WOULD catch even while it's switched off. */
+  function countMatches(w) {
+    var slots = (state.data && state.data.slots) || [];
+    var n = 0;
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      var cs = w.courses || ['any'];
+      if (cs.indexOf('any') === -1 && cs.indexOf(s.courseId) === -1) continue;
+      if (w.dates && w.dates.length && w.dates.indexOf(s.date) === -1) continue;
+      if (w.daysOfWeek && w.daysOfWeek.length) {
+        var dow = new Date(s.date + 'T12:00:00Z').getUTCDay();
+        if (w.daysOfWeek.indexOf(dow) === -1) continue;
+      }
+      if (w.timeFrom && s.time24 < w.timeFrom) continue;
+      if (w.timeTo && s.time24 > w.timeTo) continue;
+      if (w.holes != null && s.holes != null && s.holes !== w.holes) continue;
+      if (w.minSpots != null && (s.availableSpots || 0) < w.minSpots) continue;
+      if (w.maxGreenFee != null && (s.greenFee == null || s.greenFee > w.maxGreenFee)) continue;
+      n++;
+    }
+    return n;
+  }
+
+  function isExpired(w) {
+    if (!w.dates || !w.dates.length) return false;
+    var t = todayLocal();
+    return w.dates.every(function (d) { return d < t; });
+  }
+
+  function prettyDate(iso) {
+    return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-US',
+      { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
+  function courseName(id) {
+    var c = (state.data && state.data.courses || []).filter(function (x) { return x.id === id; })[0];
+    return c ? shortName(c.name) : id;
+  }
+
+  function describe(w) {
+    var who = (!w.courses || w.courses.indexOf('any') > -1)
+      ? 'Any course'
+      : w.courses.map(courseName).join(', ');
+    var when = w.dates && w.dates.length ? w.dates.map(prettyDate).join(', ')
+      : (w.daysOfWeek && w.daysOfWeek.length
+          ? w.daysOfWeek.map(function (d) { return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]; }).join(', ')
+          : 'Any day');
+    var span = (w.timeFrom ? to12(w.timeFrom) : 'any time') + ' – ' + (w.timeTo ? to12(w.timeTo) : 'any time');
+    var bits = [];
+    if (w.holes) bits.push(w.holes + ' holes');
+    if (w.minSpots) bits.push(w.minSpots + '+ player' + (w.minSpots === 1 ? '' : 's'));
+    if (w.maxGreenFee != null) bits.push('under $' + w.maxGreenFee);
+    return { who: who, when: when, span: span, extra: bits.join(' · ') };
+  }
+
+  function to12(t) {
+    var p = t.split(':'), h = +p[0];
+    return (h % 12 === 0 ? 12 : h % 12) + ':' + p[1] + (h >= 12 ? 'pm' : 'am');
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  function newDraft() {
+    var ds = dates();
+    return {
+      courses: ['any'],
+      date: ds[0] || todayLocal(),
+      timeFrom: '06:00',
+      timeTo: '12:00',
+      holes: null,
+      minSpots: 1
+    };
+  }
+
+  function draftToWatch(d) {
+    var w = {
+      label: (d.courses.indexOf('any') > -1 ? 'Any course' : d.courses.map(courseName).join(', '))
+             + ' · ' + prettyDate(d.date),
+      enabled: true,
+      courses: d.courses.slice(),
+      dates: [d.date],
+      timeFrom: d.timeFrom,
+      timeTo: d.timeTo,
+      minSpots: d.minSpots
+    };
+    if (d.holes) w.holes = d.holes;
+    return w;
+  }
+
+  /* ── rendering ── */
+
+  function renderAlerts() {
+    var root = $('#view-alerts');
+    if (!root) return;
+    root.innerHTML = '';
+
+    // Token setup gate
+    if (!token()) {
+      root.appendChild(setupCard());
+      if (A.watches && A.watches.length) {
+        root.appendChild(el('div', 'a-intro', 'Your current alerts (read-only until you connect):'));
+        A.watches.forEach(function (w, i) { root.appendChild(watchCard(w, i, true)); });
+      }
+      return;
+    }
+
+    if (A.loading) { root.appendChild(el('div', 'a-intro', 'Loading alerts…')); return; }
+
+    if (A.error) {
+      var e = el('div', 'card2');
+      e.appendChild(el('h3', null, 'Could not reach GitHub'));
+      e.appendChild(el('p', null, A.error));
+      var row = el('div', 'btn-row');
+      var again = el('button', 'btn', 'Try again');
+      again.addEventListener('click', loadWatches);
+      var forget = el('button', 'btn danger', 'Forget token');
+      forget.addEventListener('click', function () { setToken(''); loadWatches(); });
+      row.appendChild(again); row.appendChild(forget);
+      e.appendChild(row);
+      root.appendChild(e);
+      return;
+    }
+
+    // draft form, or the "new alert" button
+    if (A.draft) root.appendChild(draftForm());
+    else {
+      var add = el('button', 'btn', '+ New alert');
+      add.addEventListener('click', function () { A.draft = newDraft(); A.msg = ''; renderAlerts(); });
+      root.appendChild(add);
+    }
+
+    if (A.msg) {
+      root.appendChild(el('div', 'save-state ' + (A.msgKind || ''), A.msg));
+    }
+
+    var list = A.watches || [];
+    if (!list.length) {
+      root.appendChild(el('div', 'a-intro',
+        'No alerts yet. Create one and you will get a push the moment a matching tee time opens up.'));
+    } else {
+      list.forEach(function (w, i) { root.appendChild(watchCard(w, i, false)); });
+    }
+
+    var foot = el('div', 'a-intro',
+      'Alerts are checked every 15 minutes. You are notified once when a slot opens, and again if it is taken and later frees up.');
+    root.appendChild(foot);
+
+    var tools = el('div', 'btn-row');
+    var reload = el('button', 'btn ghost', 'Reload');
+    reload.addEventListener('click', loadWatches);
+    var disconnect = el('button', 'btn danger', 'Disconnect GitHub');
+    disconnect.addEventListener('click', function () {
+      setToken(''); A.sha = null; A.msg = ''; loadWatches();
+    });
+    tools.appendChild(reload); tools.appendChild(disconnect);
+    root.appendChild(tools);
+  }
+
+  function setupCard() {
+    var c = el('div', 'card2');
+    c.appendChild(el('h3', null, 'Connect to save alerts'));
+    var p = el('p', null,
+      'Alerts run on a schedule in GitHub, not on your phone — a phone cannot wake itself up to check. ' +
+      'To create one from here, the app needs permission to update a single file in your repo.');
+    c.appendChild(p);
+
+    var ol = document.createElement('ol');
+    ol.innerHTML =
+      '<li>On GitHub: <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b></li>' +
+      '<li>Repository access: <b>Only select repositories</b> → <code>' + esc(REPO.owner + '/' + REPO.repo) + '</code></li>' +
+      '<li>Permissions: <b>Contents → Read and write</b>. Nothing else.</li>' +
+      '<li>Set an expiry you are comfortable with, generate, and paste it below.</li>';
+    c.appendChild(ol);
+
+    var f = el('label', 'field');
+    f.appendChild(el('span', null, 'Token'));
+    var inp = document.createElement('input');
+    inp.type = 'password'; inp.placeholder = 'github_pat_…'; inp.autocomplete = 'off';
+    inp.id = 'tok-input';
+    f.appendChild(inp);
+    c.appendChild(f);
+
+    c.appendChild(el('p', null,
+      'Stored only in this browser, never in the repo. Note that ' + esc(location.hostname) +
+      ' is shared by every project on that account, so keep the token scoped to this one repo.'));
+
+    var row = el('div', 'btn-row');
+    var save = el('button', 'btn', 'Connect');
+    save.addEventListener('click', function () {
+      var v = (inp.value || '').trim();
+      if (!v) return;
+      setToken(v); A.msg = ''; loadWatches();
+    });
+    row.appendChild(save);
+    c.appendChild(row);
+    return c;
+  }
+
+  function watchCard(w, index, readOnly) {
+    var expired = isExpired(w);
+    var card = el('div', 'watch' + (w.enabled === false ? ' off' : '') + (expired ? ' expired' : ''));
+    var d = describe(w);
+
+    var top = el('div', 'watch-top');
+    top.appendChild(el('h4', null, w.label || d.who));
+    if (!readOnly) {
+      var sw = el('button', 'switch' + (w.enabled === false ? '' : ' on'));
+      sw.type = 'button';
+      sw.setAttribute('aria-label', w.enabled === false ? 'Enable alert' : 'Disable alert');
+      sw.addEventListener('click', function () {
+        A.watches[index].enabled = (w.enabled === false);
+        saveWatches();
+      });
+      top.appendChild(sw);
+    }
+    card.appendChild(top);
+
+    var meta = el('dl');
+    meta.appendChild(el('div', null, d.who));
+    meta.appendChild(el('div', null, d.when + ' · ' + d.span));
+    if (d.extra) meta.appendChild(el('div', null, d.extra));
+    card.appendChild(meta);
+
+    var tags = el('div', 'tagrow');
+    var n = countMatches(w);
+    tags.appendChild(el('span', 'pill' + (n ? '' : ' grey'),
+      n ? n + ' matching now' : 'nothing matching now'));
+    if (expired) tags.appendChild(el('span', 'pill warn', 'date passed'));
+    if (w.enabled === false) tags.appendChild(el('span', 'pill grey', 'off'));
+    card.appendChild(tags);
+
+    if (!readOnly) {
+      var row = el('div', 'btn-row');
+      var del = el('button', 'btn danger', 'Delete');
+      del.addEventListener('click', function () {
+        A.watches.splice(index, 1);
+        saveWatches();
+      });
+      row.appendChild(del);
+      card.appendChild(row);
+    }
+    return card;
+  }
+
+  function draftForm() {
+    var d = A.draft;
+    var c = el('div', 'card2');
+    c.appendChild(el('h3', null, 'New alert'));
+
+    // courses
+    var cw = el('div', null);
+    var lbl = el('div', null, 'Courses');
+    lbl.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px';
+    cw.appendChild(lbl);
+    var chips = el('div', 'chips');
+
+    var anyOn = d.courses.indexOf('any') > -1;
+    var anyChip = el('button', 'chip' + (anyOn ? ' on' : ''), 'Any course');
+    anyChip.type = 'button';
+    anyChip.addEventListener('click', function () { d.courses = ['any']; renderAlerts(); });
+    chips.appendChild(anyChip);
+
+    (state.data && state.data.courses || []).forEach(function (co) {
+      var on = d.courses.indexOf(co.id) > -1;
+      var b = el('button', 'chip' + (on ? ' on' : ''), shortName(co.name));
+      b.type = 'button'; b.title = co.name;
+      b.addEventListener('click', function () {
+        var i = d.courses.indexOf(co.id);
+        if (i > -1) d.courses.splice(i, 1);
+        else {
+          var a = d.courses.indexOf('any');
+          if (a > -1) d.courses.splice(a, 1);
+          d.courses.push(co.id);
+        }
+        if (!d.courses.length) d.courses = ['any'];
+        renderAlerts();
+      });
+      chips.appendChild(b);
+    });
+    cw.appendChild(chips);
+    c.appendChild(cw);
+
+    // date / times
+    var grid = el('div', null);
+    grid.style.cssText = 'display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(120px,1fr))';
+    grid.appendChild(fieldInput('Date', 'date', d.date, function (v) { d.date = v; renderAlerts(); }));
+    grid.appendChild(fieldInput('Earliest', 'time', d.timeFrom, function (v) { d.timeFrom = v; renderAlerts(); }));
+    grid.appendChild(fieldInput('Latest', 'time', d.timeTo, function (v) { d.timeTo = v; renderAlerts(); }));
+    c.appendChild(grid);
+
+    // holes + players
+    var segs = el('div', 'row');
+    segs.appendChild(segGroup(['Any', '9', '18'], d.holes == null ? 0 : (d.holes === 9 ? 1 : 2), function (i) {
+      d.holes = i === 0 ? null : (i === 1 ? 9 : 18); renderAlerts();
+    }));
+    segs.appendChild(segGroup(['1+', '2+', '4'], d.minSpots === 4 ? 2 : (d.minSpots === 2 ? 1 : 0), function (i) {
+      d.minSpots = [1, 2, 4][i]; renderAlerts();
+    }));
+    c.appendChild(segs);
+
+    // live match count
+    var probe = draftToWatch(d);
+    var n = countMatches(probe);
+    var note = el('div', 'match-note' + (n ? '' : ' zero'));
+    if (n) {
+      note.innerHTML = 'Right now this would catch <b>' + n + '</b> tee time' + (n === 1 ? '' : 's') +
+        '. You will be alerted when a new one appears.';
+    } else {
+      note.textContent = 'Nothing open matches this right now — which is exactly when an alert is useful. '
+        + 'But double-check the date and time range if you expected something.';
+    }
+    c.appendChild(note);
+
+    var row = el('div', 'btn-row');
+    var save = el('button', 'btn', A.saving ? 'Saving…' : 'Create alert');
+    save.disabled = !!A.saving;
+    save.addEventListener('click', function () {
+      A.watches = (A.watches || []).concat([draftToWatch(d)]);
+      A.draft = null;
+      saveWatches();
+    });
+    var cancel = el('button', 'btn ghost', 'Cancel');
+    cancel.addEventListener('click', function () { A.draft = null; renderAlerts(); });
+    row.appendChild(save); row.appendChild(cancel);
+    c.appendChild(row);
+    return c;
+  }
+
+  function fieldInput(label, type, value, onChange) {
+    var f = el('label', 'field');
+    f.appendChild(el('span', null, label));
+    var i = document.createElement('input');
+    i.type = type; i.value = value || '';
+    if (type === 'time') i.step = '900';
+    i.addEventListener('change', function () { onChange(this.value); });
+    f.appendChild(i);
+    return f;
+  }
+
+  function segGroup(labels, activeIndex, onPick) {
+    var g = el('div', 'seg');
+    labels.forEach(function (t, i) {
+      var b = el('button', i === activeIndex ? 'on' : '', t);
+      b.type = 'button';
+      b.addEventListener('click', function (ev) { ev.stopPropagation(); onPick(i); });
+      g.appendChild(b);
+    });
+    return g;
+  }
+
+  function showAlerts(on) {
+    document.body.setAttribute('data-view', on ? 'alerts' : 'times');
+    $('#alerts-btn').classList.toggle('on', !!on);
+    if (on && A.watches === null) loadWatches();
+    else if (on) renderAlerts();
+  }
+
+  $('#alerts-btn').addEventListener('click', function () {
+    showAlerts(document.body.getAttribute('data-view') !== 'alerts');
+  });
+
+  // Badge: how many enabled alerts are live.
+  function refreshBadge() {
+    var b = $('#alerts-btn');
+    var old = b.querySelector('.badge');
+    if (old) old.remove();
+    var n = (A.watches || []).filter(function (w) {
+      return w.enabled !== false && !isExpired(w);
+    }).length;
+    if (n) b.appendChild(el('span', 'badge', String(n)));
+  }
+  var _renderAlerts = renderAlerts;
+  renderAlerts = function () { _renderAlerts(); refreshBadge(); };
+
+  // Load the published copy up front so the badge is right before you tap in.
+  loadWatches();
 
   load(false);
 })();

@@ -1,8 +1,8 @@
 // Golf O'Clock — Service Worker
-// v1.0.2 (Pine Valley + home course)
+// v1.1.0 (Golf O'Clock branding)
 // Bump CACHE_NAME when you want installed PWA clients to re-fetch cached assets.
 
-const CACHE_NAME = 'golfoclock-v2';
+const CACHE_NAME = 'golfoclock-v4';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -38,6 +38,12 @@ self.addEventListener('fetch', function(event) {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
+
+  // Never touch cross-origin requests. The Alerts screen talks to the GitHub
+  // API with an Authorization header; proxying that through here would cache
+  // authenticated responses and could serve stale watches. Let the browser
+  // handle anything that isn't ours.
+  if (url.origin !== self.location.origin) return;
 
   // Tee time data is always network-first — stale times are worse than none.
   if (url.pathname.indexOf('teetimes.json') > -1) {

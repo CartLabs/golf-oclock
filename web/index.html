@@ -316,6 +316,8 @@
   .card2 h3 { font-size: 15px; font-weight: 700; }
   .card2 p { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
   .card2 ol { font-size: 13px; color: var(--ink-2); line-height: 1.6; padding-left: 18px; }
+  .card2 a { color: var(--green); font-weight: 600; word-break: break-all; }
+  .card2 .muted { color: var(--ink-3); }
   .card2 code {
     font-family: var(--mono); font-size: 12px;
     background: var(--sunk); padding: 1px 5px; border-radius: 4px;
@@ -982,10 +984,13 @@
 
     var ol = document.createElement('ol');
     ol.innerHTML =
-      '<li>On GitHub: <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b></li>' +
+      '<li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">' +
+        'github.com/settings/personal-access-tokens/new</a> ' +
+        '<span class="muted">(buried under Settings → Developer settings otherwise)</span></li>' +
+      '<li>Check you are signed in as <b>' + esc(REPO.owner) + '</b>, not another account.</li>' +
       '<li>Repository access: <b>Only select repositories</b> → <code>' + esc(REPO.owner + '/' + REPO.repo) + '</code></li>' +
-      '<li>Permissions: <b>Contents → Read and write</b>. Nothing else.</li>' +
-      '<li>Set an expiry you are comfortable with, generate, and paste it below.</li>';
+      '<li>Permissions → Repository permissions → <b>Contents: Read and write</b>. Nothing else.</li>' +
+      '<li>Generate, copy, and paste it below.</li>';
     c.appendChild(ol);
 
     var f = el('label', 'field');

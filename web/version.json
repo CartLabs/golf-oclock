@@ -1,12 +1,10 @@
 {
-  "version": "1.2.0",
+  "version": "1.2.1",
   "releaseDate": "2026-09-08",
-  "releaseName": "Alerts from your phone",
+  "releaseName": "Alerts: easier token setup",
   "notes": [
-    "New Alerts screen: create an alert for a course, date and time window without touching GitHub.",
-    "Live match count while you build a rule, so you can see straight away whether it is too narrow or far too broad.",
-    "Toggle alerts on and off, or delete them, from the same screen. Alerts whose date has passed are flagged.",
-    "Connects with a fine-grained GitHub token you paste in once, scoped to this repo only and stored on your phone.",
-    "Service worker no longer touches cross-origin requests, so authenticated API calls are never cached."
+    "The connect screen now links straight to GitHub's token page \u2014 Developer settings is buried and near-impossible to find on a phone.",
+    "Added a reminder to check which GitHub account you are signed in as, since a token from the wrong account fails silently.",
+    "Alerts: create an alert for a course, date and time window from your phone, with a live count of what it would match."
   ]
 }

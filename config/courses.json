@@ -42,6 +42,18 @@
       "foreup": { "courseId": 18836, "scheduleId": 3372, "bookingClass": 5165 }
     },
     {
+      "id": "pine-valley",
+      "name": "Pine Valley Golf Course",
+      "town": "Pelham",
+      "state": "NH",
+      "platform": "foreup",
+      "enabled": true,
+      "home": true,
+      "bookingUrl": "https://foreupsoftware.com/index.php/booking/22278/10318#/teetimes",
+      "foreup": { "courseId": 22278, "scheduleId": 10318, "bookingClass": 14033 },
+      "_note": "Kevin's home course. 9-hole tee sheet sold as either 9 or 18 (holes: '9/18'), so each slot yields two rows with separate green fees ($37 / $50). A Chronogolf listing exists at /club/pine-valley-golf-links but returns zero times on every date — it's a stale marketplace entry, NOT their booking engine."
+    },
+    {
       "id": "nabnasset",
       "name": "Nabnasset Lake Country Club",
       "town": "Westford",

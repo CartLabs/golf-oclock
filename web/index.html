@@ -212,6 +212,14 @@
     gap: 10px; padding: 13px 14px 9px;
   }
   .course-head h2 { font-size: 16px; font-weight: 700; letter-spacing: -0.015em; }
+  .home-tag {
+    display: inline-block; margin-left: 7px; vertical-align: 2px;
+    padding: 2px 7px; border-radius: 999px;
+    border: 1px solid var(--green-line); background: var(--green-bg);
+    color: var(--green); font-size: 10px; font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase;
+  }
+  .course.is-home { border-color: var(--green-line); }
   .course-head .loc {
     font-family: var(--mono); font-size: 11px; color: var(--ink-3);
     text-align: right; flex: none; white-space: nowrap;
@@ -461,14 +469,26 @@
       if (!groups[s.courseId]) { groups[s.courseId] = []; order.push(s.courseId); }
       groups[s.courseId].push(s);
     });
-    order.sort(function (a, b) { return groups[a][0].time24.localeCompare(groups[b][0].time24); });
+    // Home courses first, then everything else by earliest available time.
+    var homeIds = new Set((state.data.courses || [])
+      .filter(function (c) { return c.home; })
+      .map(function (c) { return c.id; }));
+
+    order.sort(function (a, b) {
+      var ah = homeIds.has(a) ? 0 : 1, bh = homeIds.has(b) ? 0 : 1;
+      if (ah !== bh) return ah - bh;
+      return groups[a][0].time24.localeCompare(groups[b][0].time24);
+    });
 
     order.forEach(function (id) {
       var list = groups[id], first = list[0];
-      var card = el('div', 'course');
+      var isHome = homeIds.has(id);
+      var card = el('div', 'course' + (isHome ? ' is-home' : ''));
 
       var head = el('div', 'course-head');
-      head.appendChild(el('h2', null, first.courseName));
+      var h = el('h2', null, first.courseName);
+      if (isHome) h.appendChild(el('span', 'home-tag', 'Home'));
+      head.appendChild(h);
       head.appendChild(el('div', 'loc', first.town + ', ' + first.state + ' · ' + list.length));
       card.appendChild(head);
 

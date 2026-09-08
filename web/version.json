@@ -1,11 +1,10 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "releaseDate": "2026-09-08",
-  "releaseName": "Chronogolf pagination fix",
+  "releaseName": "Pine Valley + home course",
   "notes": [
-    "Chronogolf tee times were being truncated at 24 per course per day — late afternoon and twilight slots were silently missing. Now pages through every result.",
-    "Chronogolf requests are throttled and back off on rate limits, which was causing three of the four courses to drop out entirely.",
-    "Failed requests now record the server's response, so a blocked course explains itself instead of just saying 403.",
-    "TeeWire requests send full browser headers in an attempt to get past Cloudflare from the scheduler."
+    "Added Pine Valley Golf Course (Pelham, NH) — 15 courses total. Its tee sheet sells 9 or 18 off the same slot, so each time appears once per hole option with its own price.",
+    "Home courses are pinned to the top of the list and marked with a Home tag. Set \"home\": true on any course in config/courses.json.",
+    "Chronogolf tuning settled at a 3.5s request throttle and a 20s gap between courses — all 15 courses now report cleanly."
   ]
 }

@@ -98,6 +98,8 @@ async function main() {
     courses: active.map((c) => ({
       id: c.id, name: c.name, town: c.town, state: c.state,
       platform: c.platform, bookingUrl: c.bookingUrl,
+      // Home courses are pinned to the top of the app's list.
+      home: c.home === true,
     })),
     slots,
   }, null, 0));

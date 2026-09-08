@@ -24,11 +24,11 @@ The phone app is a static page. It never polls a golf course itself — it just 
 
 ## What it covers
 
-**14 public courses across 3 platforms**, all via clean JSON APIs — no HTML scraping:
+**15 public courses across 3 platforms**, all via clean JSON APIs — no HTML scraping:
 
 | Platform | Courses |
 |---|---|
-| foreUP | Hickory Hill, Passaconaway, Hidden Creek, Hoodkroft |
+| foreUP | Hickory Hill, Passaconaway, Hidden Creek, Hoodkroft, **Pine Valley** (home course) |
 | TeeItUp | Merrimack Valley, Chelmsford, Quail Ridge, Crystal Lake, Windham, Campbell's Scottish Highlands |
 | Chronogolf | CC of Billerica, Whip Poor Will, Overlook, Souhegan Woods |
 

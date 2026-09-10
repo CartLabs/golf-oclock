@@ -62,6 +62,20 @@
       "timeTo": "08:00",
       "minSpots": 2,
       "holes": 18
+    },
+    {
+      "label": "Pine Valley · Sun, Sep 20",
+      "enabled": true,
+      "courses": [
+        "pine-valley"
+      ],
+      "dates": [
+        "2026-09-20"
+      ],
+      "timeFrom": "07:00",
+      "timeTo": "08:00",
+      "minSpots": 2,
+      "holes": 18
     }
   ]
 }

@@ -14,21 +14,6 @@
   },
   "watches": [
     {
-      "label": "Weekend morning foursome",
-      "enabled": false,
-      "courses": [
-        "any"
-      ],
-      "daysOfWeek": [
-        0,
-        6
-      ],
-      "timeFrom": "06:00",
-      "timeTo": "10:30",
-      "holes": 18,
-      "minSpots": 4
-    },
-    {
       "label": "Pine Valley · Sat, Sep 12",
       "enabled": true,
       "courses": [

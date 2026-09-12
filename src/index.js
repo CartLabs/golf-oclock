@@ -23,8 +23,8 @@ const ADAPTERS = {
 };
 
 // How many days ahead to poll. Booking windows here run 4–14 days;
-// 8 covers every course without hammering for dates that can't exist yet.
-const DAYS_AHEAD = Number(process.env.DAYS_AHEAD || 8);
+// 9 covers every course without hammering for dates that can't exist yet.
+const DAYS_AHEAD = Number(process.env.DAYS_AHEAD || 9);
 
 // Be a good neighbour: these are small clubs, not hyperscalers.
 const DELAY_BETWEEN_COURSES_MS = Number(process.env.COURSE_DELAY_MS || 700);
@@ -37,7 +37,7 @@ const readJson = async (f, fallback) => {
 async function main() {
   const noAlerts = process.argv.includes('--no-alerts');
   // --hot: poll ONLY the courses and dates you have live alerts on. A handful
-  // of requests instead of 15 courses x 8 days, so it can run every few minutes
+  // of requests instead of 15 courses x 9 days, so it can run every few minutes
   // and cut the time between a slot opening and your phone buzzing.
   const hot = process.argv.includes('--hot');
   const only = getFlag('--only');

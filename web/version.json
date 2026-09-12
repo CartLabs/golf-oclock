@@ -1,10 +1,9 @@
 {
-  "version": "1.4.0",
-  "releaseDate": "2026-09-11",
-  "releaseName": "Pinned status, honest expiry",
+  "version": "1.5.0",
+  "releaseDate": "2026-09-12",
+  "releaseName": "Nine-day window",
   "notes": [
-    "Last-updated time, slot count and course count moved from the bottom of the page into the sticky header, so data freshness is visible no matter how far you have scrolled.",
-    "One-off alerts now mute themselves automatically once their date has fully passed — and not a moment before. A same-day alert stays live all day, including late evening, and is only ever muted rather than deleted so you can re-date it.",
-    "Recurring alerts (day-of-week rules) are never auto-muted."
+    "The tee sheet now reaches eight days past today instead of seven, so the far end of every course's booking window is visible the moment it opens.",
+    "Alerts watch that extra day too — a Saturday rule now catches next Saturday a day earlier than it used to."
   ]
 }

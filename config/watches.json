@@ -29,27 +29,6 @@
       "minSpots": 4
     },
     {
-      "label": "Weekday twilight 9",
-      "enabled": false,
-      "courses": [
-        "hickory-hill",
-        "tree-house",
-        "swanson-meadows"
-      ],
-      "daysOfWeek": [
-        1,
-        2,
-        3,
-        4,
-        5
-      ],
-      "timeFrom": "16:00",
-      "timeTo": "19:00",
-      "holes": 9,
-      "minSpots": 2,
-      "maxGreenFee": 40
-    },
-    {
       "label": "Pine Valley · Sat, Sep 12",
       "enabled": true,
       "courses": [

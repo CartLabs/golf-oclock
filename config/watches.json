@@ -12,5 +12,20 @@
     "maxGreenFee": "Only alert at or under this green fee, in dollars. Omit for any price.",
     "enabled": "false to mute a rule without deleting it."
   },
-  "watches": []
+  "watches": [
+    {
+      "label": "Pine Valley · Sun, Sep 27",
+      "enabled": true,
+      "courses": [
+        "pine-valley"
+      ],
+      "dates": [
+        "2026-09-27"
+      ],
+      "timeFrom": "07:00",
+      "timeTo": "08:00",
+      "minSpots": 2,
+      "holes": 18
+    }
+  ]
 }

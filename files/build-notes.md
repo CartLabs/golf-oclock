@@ -125,11 +125,30 @@ The breakthrough was the 20s gap *between courses*, not more throttling within t
 
 **Final coverage: 14 of 16 courses** — foreUP 4, TeeItUp 6, Chronogolf 4.
 
+## foreUP booking links cannot be deep-linked — tested, dead end (2026-09-13)
+
+Tapping a foreUP slot drops you on the course's booking page at **today's** sheet, behind a **Public / Members** chooser. You then re-pick the class and the date by hand. Four URL forms were tested live against Pine Valley (course 22278, schedule 10318, booking class 14033):
+
+| URL | Result |
+|---|---|
+| `#/teetimes?date=09-20-2026&booking_class=14033&schedule_id=10318&holes=all` | date input still `09-13-2026`; chooser shown |
+| `?booking_class=14033&date=09-20-2026#/teetimes` | same |
+| after clicking Public, any of the above | date **resets to today** |
+
+Two independent walls:
+
+- **The date is discarded.** foreUP's booking app always opens today's sheet and ignores a date anywhere in the URL — hash or query string.
+- **The booking class is server-side session state**, carried in `PHPSESSID`. Not in the URL, not in localStorage or sessionStorage (checked: only `pending_reservation`, `_gcl_ls`, `COURSE_LIST_EXPANDED`). No parameter pre-selects it.
+
+The chooser reappears on every tap because a phone opens the link in a fresh in-app browser with no cookie jar. **Opening the link in Safari instead makes the Public step stick** for as long as the session cookie lives. Nothing helps the date.
+
+**Do not re-test this.** The only remaining improvement is on our side: state the two steps at the point of the tap, the way `notify.js` already does in the push body (`Opens today's sheet — pick Sun, Sep 20`). The app's own booking button has no such hint. Deliberately not built — Kevin's call, the manual steps are quick once known.
+
 ## Not yet done / open threads
 
 - **Nothing has hit a live API from a datacenter IP.** The sandbox blocks egress; the first Actions run is the real test. Most likely failure is Cloudflare on TeeItUp or Chronogolf from GitHub's IPs — if so, the fix is Playwright in the Action for those two.
 - Passaconaway and Hidden Creek have no `bookingClass` captured. The API accepts the call without it; if their rates look wrong, capture it the way Hoodkroft's was.
-- Booking windows: only 4 courses publish one (Billerica 4d, Campbell's 5d, Hickory Hill 6d, Windham 7d). Could be derived empirically by walking dates until slots stop.
+- Booking windows: only 4 courses publish one (Billerica 4d, Campbell's 5d, Hickory Hill 6d, Windham 7d). Could be derived empirically by walking dates until slots stop — Pine Valley was measured that way on 2026-09-13 and runs a **7-day rolling window**, releasing the next day on an evening rollover.
 - Club Prophet (Four Oaks, Butter Brook, Candia Woods) still behind Cloudflare — deliberate go/no-go, not attempted.
 - Trull Brook (Club Caddie) needs its own adapter; the credential slot is reserved but no adapter written.
 - Distance filtering is possible for free — the TeeItUp alias endpoint returns lat/long. Not built.

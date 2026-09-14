@@ -1,39 +1,23 @@
-name: Watchdog
+name: Fast alert poll
 
-# Is the pipeline actually alive? Checks that tee time data is being written,
-# and clears runs wedged in the queue.
-#
-# Runs half-hourly, offset from the pollers' minutes, across the polling window
-# plus a little either side. Outside those hours stale data is expected, so
-# there is nothing to report.
 on:
   schedule:
-    - cron: '13,43 10-23,0-3 * * *'
+    - cron: '*/5 9-23,0-3 * * *'
   workflow_dispatch:
-    inputs:
-      test_push:
-        description: 'Send a test notification, to prove ntfy reaches your phone'
-        type: boolean
-        default: false
 
-# NOT `golf-poll`. This workflow must never queue behind the thing it watches —
-# a watchdog stuck in the same jam cannot report the jam. Newest run wins;
-# it only ever reads state, so cancelling an older one loses nothing.
+# Shares a lane with the full poll so the two can never write seen.json at once.
 concurrency:
-  group: golf-watchdog
-  cancel-in-progress: true
+  group: golf-poll
+  cancel-in-progress: false
 
 permissions:
-  contents: read
-  actions: write          # needed to cancel a stuck run
+  contents: write
 
 jobs:
-  watchdog:
+  hot:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -55,12 +39,23 @@ jobs:
             echo "No state branch yet — seeding from the copies on main."
           fi
 
-      - name: Check the pipeline is alive
+      - name: Poll only what you have alerts on
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
-          TEST_PUSH: ${{ inputs.test_push }}
-          STALE_MINUTES: '45'
-          STUCK_MINUTES: '20'
-        run: node src/watchdog.js
+        run: node src/index.js --hot
+
+      - name: Save alert state
+        run: |
+          set -e
+          git config user.name  "golf-oclock-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Both files are staged so the force-push carries the current tee time
+          # data forward rather than reverting `state` to main's frozen copy.
+          git add data/teetimes.json data/seen.json
+          if git diff --staged --quiet; then
+            echo "No change."
+            exit 0
+          fi
+          git commit -m "fast poll $(date -u +'%H:%M UTC')"
+          git push --force origin HEAD:state

@@ -1,0 +1,117 @@
+name: Poll tee times
+
+on:
+  schedule:
+    # Every 15 minutes, 5am–10pm Eastern (09:00–03:00 UTC). Cron here is UTC.
+    # Off the quarter-hour on purpose — that is when GitHub's queue is busiest.
+    - cron: '7,22,37,52 9-23,0-3 * * *'
+  workflow_dispatch:        # lets you run it by hand from the Actions tab
+
+  push:
+    branches: [main]
+    paths:
+      - 'config/**'
+      - 'src/**'
+      - 'web/**'
+      - '.github/workflows/poll.yml'
+
+# Shared with hot.yml so the two can never write seen.json at the same time.
+concurrency:
+  group: golf-poll
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Poller state lives on the `state` branch, never on main ──────────
+      # main then only changes when Kevin changes it, so a local clone is never
+      # racing a bot that commits every few minutes — which is what repeatedly
+      # ate uncommitted work in GitHub Desktop on 2026-09-12.
+      # On the very first run `state` does not exist and main's copies seed it.
+      - name: Restore poller state
+        run: |
+          set -e
+          if git ls-remote --exit-code --heads origin state >/dev/null 2>&1; then
+            git fetch --depth=1 origin state
+            git checkout FETCH_HEAD -- data/teetimes.json data/seen.json
+            git reset -q
+            echo "State restored from the state branch."
+          else
+            echo "No state branch yet — seeding from the copies on main."
+          fi
+
+      - name: Run the poller
+        env:
+          # Push target. Set this in Settings → Secrets and variables → Actions.
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
+          # Course logins. Add a pair per course that needs one; the names must
+          # match "credentialKey" in config/courses.json.
+          GOLF_NABNASSET_USER: ${{ secrets.GOLF_NABNASSET_USER }}
+          GOLF_NABNASSET_PASS: ${{ secrets.GOLF_NABNASSET_PASS }}
+          GOLF_TRULLBROOK_USER: ${{ secrets.GOLF_TRULLBROOK_USER }}
+          GOLF_TRULLBROOK_PASS: ${{ secrets.GOLF_TRULLBROOK_PASS }}
+          DAYS_AHEAD: '9'
+        run: node src/index.js
+
+      - name: Save the results
+        run: |
+          set -e
+          git config user.name  "golf-oclock-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Watches can be muted by the expiry sweep. The app writes this file on
+          # main through the API, so it has to go back to main — but it changes
+          # once in a blue moon, so it is not what causes the merge pain.
+          if ! git diff --quiet -- config/watches.json; then
+            git add config/watches.json
+            git commit -m "alerts: expiry sweep"
+            for i in 1 2 3; do
+              git push origin HEAD:main && break
+              git pull --rebase --autostash origin main || git rebase --abort || true
+              sleep $((i * 3))
+            done
+          fi
+
+          # Tee time data goes to `state`, force-pushed. Nothing else writes that
+          # branch, so there is nothing to merge and nothing to race.
+          git add data/teetimes.json data/seen.json
+          if git diff --staged --quiet; then
+            echo "No change in availability."
+            exit 0
+          fi
+          git commit -m "tee times $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push --force origin HEAD:state
+
+      - name: Stage the site
+        run: |
+          mkdir -p web/data web/config
+          cp data/teetimes.json web/data/teetimes.json
+          # Published so the Alerts screen can show your watches before you connect a token.
+          cp config/watches.json web/config/watches.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: poll
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -14,13 +14,13 @@
   },
   "watches": [
     {
-      "label": "Pine Valley · Sun, Sep 20",
+      "label": "Pine Valley · Sun, Sep 27",
       "enabled": true,
       "courses": [
         "pine-valley"
       ],
       "dates": [
-        "2026-09-20"
+        "2026-09-27"
       ],
       "timeFrom": "07:00",
       "timeTo": "08:00",

@@ -12,5 +12,20 @@
     "maxGreenFee": "Only alert at or under this green fee, in dollars. Omit for any price.",
     "enabled": "false to mute a rule without deleting it."
   },
-  "watches": []
+  "watches": [
+    {
+      "label": "Any course · Sun, Oct 11",
+      "enabled": true,
+      "courses": [
+        "any"
+      ],
+      "dates": [
+        "2026-10-11"
+      ],
+      "timeFrom": "07:00",
+      "timeTo": "07:51",
+      "minSpots": 2,
+      "holes": 18
+    }
+  ]
 }

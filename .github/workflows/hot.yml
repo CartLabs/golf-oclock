@@ -1,8 +1,7 @@
 name: Fast alert poll
 
 on:
-  schedule:
-    - cron: '*/5 9-23,0-3 * * *'
+
   workflow_dispatch:
 
 # Shares a lane with the full poll so the two can never write seen.json at once.

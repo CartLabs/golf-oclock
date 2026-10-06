@@ -8,9 +8,15 @@
 //
 // Two checks, in order:
 //   1. Freshness  — has data/teetimes.json been written recently?
-//   2. Stuck runs — is a run sitting in `queued` far longer than it should be?
-//                   If so, cancel it, which frees the lock and lets the next
-//                   scheduled run through.
+//   2. Stuck runs — is a run sitting in `queued` or `waiting` far longer than
+//                   it should be? If so, cancel it, which frees the lock and
+//                   lets the next run through.
+//
+// `waiting` was added after 2026-10-06: a full poll finished its work, then its
+// Pages deploy job sat in `waiting` for over two hours. The run never ended, so
+// it held the lock exactly like the queued one had — 35 runs cancelled behind
+// it — and this file, which only looked for `queued`, reported stale data six
+// times without being able to clear the cause.
 //
 // CRITICAL: this must never join the `golf-poll` concurrency group. A watchdog
 // that queues behind the thing it is watching cannot report that it is stuck.
@@ -38,10 +44,15 @@ export function freshness(data, now = Date.now(), limit = STALE_MINUTES) {
   return { ok: age <= limit, age, reason: `data is ${Math.round(age)} min old` };
 }
 
-/** Runs that have been sitting in the queue too long to be normal. */
+// Statuses in which a run holds the lock while doing no work. `in_progress` is
+// deliberately absent — slow is not the same as wedged. So is `pending`: that
+// is a healthy run waiting its turn behind the lock, the victim, not the jam.
+export const STUCK_STATUSES = ['queued', 'waiting'];
+
+/** Runs that have been sitting idle too long to be normal. */
 export function stuckRuns(runs, now = Date.now(), limit = STUCK_MINUTES) {
   return runs
-    .filter((r) => r.status === 'queued')
+    .filter((r) => STUCK_STATUSES.includes(r.status))
     .map((r) => ({ ...r, waited: ageMinutes(r.created_at, now) }))
     .filter((r) => r.waited != null && r.waited > limit);
 }
@@ -119,26 +130,34 @@ async function main() {
     if (!f.ok) problems.push(`Tee time data is ${Math.round(f.age)} minutes old.`);
   }
 
-  // ---- 2. Is a run wedged in the queue? --------------------------------
+  // ---- 2. Is a run wedged, holding the lock? ----------------------------
   // Done even when the data looks fine: catching a jam early is the whole point.
   let cancelled = [];
   if (TOKEN && REPO) {
     try {
-      const { workflow_runs: runs = [] } = await gh(`/repos/${REPO}/actions/runs?per_page=30`);
+      // Ask for each stuck status by name rather than reading the newest page
+      // of runs. A jam buries itself: the pollers fire every few minutes, so
+      // within the hour the wedged run is far off the first page and a plain
+      // "latest 30" listing would never see it.
+      const runs = [];
+      for (const status of STUCK_STATUSES) {
+        const page = await gh(`/repos/${REPO}/actions/runs?status=${status}&per_page=30`);
+        runs.push(...(page.workflow_runs || []));
+      }
       const stuck = stuckRuns(runs).filter((r) => r.id !== Number(process.env.GITHUB_RUN_ID));
 
       for (const r of stuck) {
-        console.log(`[watchdog] ${r.name} #${r.run_number} queued ${Math.round(r.waited)} min — cancelling.`);
+        console.log(`[watchdog] ${r.name} #${r.run_number} ${r.status} ${Math.round(r.waited)} min — cancelling.`);
         if (DRY_RUN) continue;
         try {
           await gh(`/repos/${REPO}/actions/runs/${r.id}/cancel`, { method: 'POST' });
-          cancelled.push(`${r.name} #${r.run_number} (queued ${Math.round(r.waited)} min)`);
+          cancelled.push(`${r.name} #${r.run_number} (${r.status} ${Math.round(r.waited)} min)`);
         } catch (err) {
           console.error(`[watchdog] could not cancel #${r.run_number}:`, err.message);
-          problems.push(`A run is stuck in the queue and could not be cancelled: #${r.run_number}.`);
+          problems.push(`A run is stuck (${r.status}) and could not be cancelled: #${r.run_number}.`);
         }
       }
-      if (!stuck.length) console.log('[watchdog] no runs stuck in the queue.');
+      if (!stuck.length) console.log('[watchdog] no runs stuck in queued or waiting.');
     } catch (err) {
       console.error('[watchdog] could not read workflow runs:', err.message);
     }

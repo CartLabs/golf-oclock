@@ -1,9 +1,10 @@
 {
-  "version": "1.5.2",
-  "releaseDate": "2026-09-13",
-  "releaseName": "Alerts that cut through",
+  "version": "1.5.3",
+  "releaseDate": "2026-10-06",
+  "releaseName": "A watchdog that clears the second kind of jam",
   "notes": [
-    "Tee time alerts now arrive at maximum priority, so they are louder and harder to miss — and less likely to be folded into a notification summary and read an hour later. A slot can be gone in minutes; these only fire on a watch you set deliberately, so they are allowed to be insistent.",
-    "If they ever feel too aggressive, the level is a single number in the notifier."
+    "Nothing changes in the app itself. This is a fix to the watchdog that keeps tee times updating.",
+    "On October 6 an update finished its work but hung while publishing the site, and blocked every update behind it for over two hours. The watchdog noticed the stale data and said so, but could only clear one kind of stuck run and this was the other kind. It now clears both, so a hang like that should cost about half an hour instead of waiting for someone to step in.",
+    "It also looks for stuck runs directly rather than scanning the most recent ones, so a jam that has been sitting for hours can no longer scroll out of its view."
   ]
 }

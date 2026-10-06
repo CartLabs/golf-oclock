@@ -319,6 +319,22 @@ t('a long-running job is never mistaken for a stuck one', () => {
   const runs = [{ id: 9, status: 'in_progress', created_at: '2026-09-12T19:00:00Z', run_number: 1, name: 'Poll tee times' }];
   assert.equal(stuckRuns(runs, NOW, 20).length, 0);
 });
+t('a run left waiting on its deploy is stuck too', () => {
+  // 2026-10-06: poll #1993 did its work, then its Pages deploy sat in `waiting`
+  // for two hours and held the lock. Same jam as a queued run, different word.
+  const runs = [
+    { id: 3, status: 'waiting', created_at: '2026-09-12T20:25:00Z', run_number: 1993, name: 'Poll tee times' },
+    { id: 4, status: 'waiting', created_at: '2026-09-12T20:55:00Z', run_number: 1994, name: 'Poll tee times' },
+  ];
+  const stuck = stuckRuns(runs, NOW, 20);
+  assert.equal(stuck.length, 1, 'only the long-waiting run');
+  assert.equal(stuck[0].id, 3);
+  assert.equal(stuck[0].status, 'waiting');
+});
+t('a run pending behind the lock is the victim, not the jam', () => {
+  const runs = [{ id: 5, status: 'pending', created_at: '2026-09-12T19:00:00Z', run_number: 2, name: 'Fast alert poll' }];
+  assert.equal(stuckRuns(runs, NOW, 20).length, 0);
+});
 t('ageMinutes returns null rather than NaN on junk', () => {
   assert.equal(ageMinutes('not-a-date', NOW), null);
 });

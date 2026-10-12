@@ -15,7 +15,7 @@
   "watches": [
     {
       "label": "Any course · Sun, Oct 11",
-      "enabled": true,
+      "enabled": false,
       "courses": [
         "any"
       ],

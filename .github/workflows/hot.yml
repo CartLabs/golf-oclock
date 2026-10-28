@@ -6,7 +6,7 @@ on:
 
 # Shares a lane with the full poll so the two can never write seen.json at once.
 concurrency:
-  group: golf-poll
+  group: golf-data
   cancel-in-progress: false
 
 permissions:

@@ -154,6 +154,12 @@ async function main() {
           cancelled.push(`${r.name} #${r.run_number} (${r.status} ${Math.round(r.waited)} min)`);
         } catch (err) {
           console.error(`[watchdog] could not cancel #${r.run_number}:`, err.message);
+          // 2026-10-27: poll #3604 sat in `waiting` and GitHub refused every
+          // cancel, force-cancel included, with 409 "has not been queued yet".
+          // Nothing here can clear that, so shouting about it every half hour
+          // only buries the real signal. Log it and let the freshness check
+          // speak for whether the pipeline is actually stalled.
+          if (/\b409\b/.test(err.message) && /not been queued/i.test(err.message)) continue;
           problems.push(`A run is stuck (${r.status}) and could not be cancelled: #${r.run_number}.`);
         }
       }

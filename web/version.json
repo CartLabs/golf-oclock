@@ -1,10 +1,9 @@
 {
-  "version": "1.5.3",
-  "releaseDate": "2026-10-06",
-  "releaseName": "A watchdog that clears the second kind of jam",
+  "version": "1.5.4",
+  "releaseDate": "2026-10-27",
+  "releaseName": "Quieter about a run it cannot clear",
   "notes": [
-    "Nothing changes in the app itself. This is a fix to the watchdog that keeps tee times updating.",
-    "On October 6 an update finished its work but hung while publishing the site, and blocked every update behind it for over two hours. The watchdog noticed the stale data and said so, but could only clear one kind of stuck run and this was the other kind. It now clears both, so a hang like that should cost about half an hour instead of waiting for someone to step in.",
-    "It also looks for stuck runs directly rather than scanning the most recent ones, so a jam that has been sitting for hours can no longer scroll out of its view."
+    "Nothing changes in the app itself.",
+    "On October 27 an update got stuck in a state GitHub would not let anyone cancel. The watchdog now notes a run like that in its log instead of raising an alarm about it every half hour. It still alerts you whenever the tee time data actually goes stale, which is the thing that matters."
   ]
 }
